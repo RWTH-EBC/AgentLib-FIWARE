@@ -1,0 +1,148 @@
+{
+    "id": "SiL",
+    "modules": [
+        {
+            "module_id": "room",
+            "type": "simulator",
+            "model": {
+                "type": "fmu",
+                "path": "../../multi-agent-systems/room_mas/models/SimpleRoom.fmu"
+            },
+            "t_sample": 60,
+            "inputs": [
+                {
+                    "name": "Q_flow_heat",
+                    "value": 0
+                },
+                {
+                    "name": "T_oda",
+                    "value": 273.15
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "T_air"
+                }
+            ]
+        },
+        {
+            "iota_url": "http://<YOUR.IP.GOES.HERE>:4041",
+            "mqtt_url": "mqtt://<YOUR.IP.GOES.HERE>:1883",
+            "fiware_header": {
+                "service_path": "/myEmulatorExample",
+                "service": "agentlib"
+            },
+            "module_id": "iotagent",
+            "type": "fiware_iota_client",
+            "agent_id": "SiL",
+            "devices": [
+                {
+                    "timezone": "Europe/London",
+                    "timestamp": null,
+                    "apikey": "agentlib_fiware_123456789",
+                    "endpoint": null,
+                    "protocol": "IoTA-JSON",
+                    "transport": "MQTT",
+                    "expressionLanguage": null,
+                    "explicitAttrs": false,
+                    "device_id": "Q_flow_heat",
+                    "service": null,
+                    "service_path": "/",
+                    "entity_name": "Q_flow_heat",
+                    "entity_type": "Actuator",
+                    "lazy": [],
+                    "commands": [
+                        {
+                            "name": "Q_flow_heat",
+                            "type": "Number"
+                        }
+                    ],
+                    "attributes": [],
+                    "static_attributes": [],
+                    "internal_attributes": [],
+                    "ngsiVersion": "v2"
+                },
+                {
+                    "timezone": "Europe/London",
+                    "timestamp": null,
+                    "apikey": "agentlib_fiware_123456789",
+                    "endpoint": null,
+                    "protocol": "IoTA-JSON",
+                    "transport": "MQTT",
+                    "expressionLanguage": null,
+                    "explicitAttrs": false,
+                    "device_id": "T_oda",
+                    "service": null,
+                    "service_path": "/",
+                    "entity_name": "T_oda",
+                    "entity_type": "Actuator",
+                    "lazy": [],
+                    "commands": [
+                        {
+                            "name": "T_oda",
+                            "type": "Number"
+                        }
+                    ],
+                    "attributes": [],
+                    "static_attributes": [],
+                    "internal_attributes": [],
+                    "ngsiVersion": "v2"
+                },
+                {
+                    "timezone": "Europe/London",
+                    "timestamp": null,
+                    "apikey": "agentlib_fiware_123456789",
+                    "endpoint": null,
+                    "protocol": "IoTA-JSON",
+                    "transport": "MQTT",
+                    "expressionLanguage": null,
+                    "explicitAttrs": false,
+                    "device_id": "T_air",
+                    "service": null,
+                    "service_path": "/",
+                    "entity_name": "T_air",
+                    "entity_type": "Sensor",
+                    "lazy": [],
+                    "commands": [],
+                    "attributes": [
+                        {
+                            "name": "T_air",
+                            "type": "Number",
+                            "metadata": {},
+                            "expression": null,
+                            "entity_name": null,
+                            "entity_type": null,
+                            "reverse": null,
+                            "object_id": "T_air"
+                        }
+                    ],
+                    "static_attributes": [],
+                    "internal_attributes": [],
+                    "ngsiVersion": "v2"
+                }
+            ],
+            "service_groups": [
+                {
+                    "service": null,
+                    "subservice": null,
+                    "resource": "/iot/json",
+                    "apikey": "agentlib_fiware_123456789",
+                    "timestamp": null,
+                    "entity_type": null,
+                    "trust": null,
+                    "cbHost": null,
+                    "lazy": [],
+                    "commands": [],
+                    "attributes": [],
+                    "static_attributes": [],
+                    "internal_attributes": [],
+                    "expressionLanguage": "legacy",
+                    "explicitAttrs": false,
+                    "autoprovision": true,
+                    "ngsiVersion": "v2",
+                    "defaultEntityNameConjunction": null
+                }
+            ]
+        }
+    ]
+}

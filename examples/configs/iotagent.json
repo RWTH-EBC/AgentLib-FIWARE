@@ -1,0 +1,8 @@
+{
+  "iota_url": "http://<YOUR.IP.GOES.HERE>:4041",
+  "mqtt_url": "mqtt://<YOUR.IP.GOES.HERE>:1883",
+  "fiware_header": {
+    "service_path": "/myEmulatorExample",
+    "service": "agentlib"
+  }
+}

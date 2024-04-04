@@ -1,0 +1,6 @@
+{
+  "module_id": "sensor",
+  "type": "TRYSensor",
+  "t_sample": 60,
+  "filename": "../../multi-agent-systems/room_mas/data/TRY2015_Aachen_Jahr.dat"
+}
