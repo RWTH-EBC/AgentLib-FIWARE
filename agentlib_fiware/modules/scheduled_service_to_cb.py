@@ -2,10 +2,11 @@
 
 """
 import logging
-from typing import List
 from datetime import datetime
 
+import numpy as np
 from filip.clients.ngsi_v2 import ContextBrokerClient
+from filip.models.ngsi_v2.base import NamedMetadata
 from filip.models.base import FiwareHeader
 from pydantic import (
     AnyHttpUrl, Field,
@@ -51,6 +52,15 @@ class ScheduledServiceToContextBrokerCommunicatorConfig(BaseModuleConfig):
         description="Interval in which the service "
                     "reads the attributes from the context broker"
     )
+    skip_update_after_x_seconds: float = Field(
+        default=np.inf,
+        title="Skip update if x seconds too old",
+        description="Skip attribute update if the variable was too "
+                    "long in the data-broker queue. "
+                    "This is a sign of bad connection or bad FIWARE performance."
+    )
+
+    _register_variable_callbacks: bool = True
 
     @field_validator("read_entity_attributes", "update_entity_attributes")
     @classmethod
@@ -164,6 +174,13 @@ class ScheduledServiceToContextBrokerCommunicator(BaseModule):
         Receive the attribute callback from the AgentLib and
         update the attribute in the ContextBroker.
         """
+        time_start_update = self.env.time
+        time_delay = time_start_update - variable.timestamp
+        if time_delay > self.config.skip_update_after_x_seconds:
+            self.logger.error("The update of '%s' is %s seconds out of sync, skipping the update",
+                             name, time_delay)
+        self.logger.info("Starting variable update '%s'",
+                         name)
         entity_id, attr_name = name.split("/")
         try:
             entity = self._httpc.get_entity(entity_id=entity_id)
@@ -173,21 +190,28 @@ class ScheduledServiceToContextBrokerCommunicator(BaseModule):
                          "Error-message: %s", name, err)
             return
         attr.value = variable.value
+        if "TimeInstant" in attr.metadata:
+            attr.metadata["TimeInstant"] = NamedMetadata(
+                name="TimeInstant",
+                type="DateTime",
+                value=datetime.fromtimestamp(variable.timestamp).strftime(self.config.time_format)
+            )
         self._httpc.update_entity_attribute(
             entity_id=entity_id,
             entity_type=entity.type,
             attr=attr,
-            override_metadata=False
+            override_metadata=True
         )
-        self.logger.debug(
-            "Successfully updated entity attribute %s to %s for variable %s! ",
-            attr.json(),
-            entity.json(include={'service', 'service_path', 'id', 'type'}),
-            variable.alias
+        self.logger.error(
+            "Successfully updated entity attribute %s to %s for variable %s. Took %s seconds",
+            attr.model_dump_json(),
+            entity.model_dump_json(include={'service', 'service_path', 'id', 'type'}),
+            variable.alias,
+            self.env.time - time_start_update
         )
 
     def terminate(self):
         """Disconnect subscription ids"""
-        for sud_id in self.subscription_ids:
-            self._httpc.delete_subscription(subscription_id=sud_id)
+        for subscription_id in self.subscription_ids:
+            self._httpc.delete_subscription(subscription_id=subscription_id)
         super().terminate()
