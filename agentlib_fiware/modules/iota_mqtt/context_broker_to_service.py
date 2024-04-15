@@ -1,9 +1,8 @@
 """
 
 """
-import json
 import logging
-from typing import List, Union, Dict, AnyStr, Tuple
+from typing import List, Union
 from datetime import datetime
 
 from filip.clients.ngsi_v2 import ContextBrokerClient
@@ -18,16 +17,18 @@ from filip.models.ngsi_v2.subscriptions import \
 from paho.mqtt.client import Client as \
     PahoMQTTClient
 from pydantic import (
+    FieldValidationInfo,
     AnyHttpUrl, Field,
     PrivateAttr, FilePath,
-    parse_file_as, validator
+    parse_file_as
 )
-
 from agentlib import Agent, AgentVariable
-from agentlib.modules.iot.fiware.communicator import (
+
+from agentlib_fiware.modules.iota_mqtt.base import (
     FIWARECommunicatorConfig,
     FIWARECommunicator
 )
+
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +47,8 @@ class ContextBrokerCommunicatorConfig(FIWARECommunicatorConfig):
     alias_routing: str = Field(
         title="Which routing to use for the AgentVariables alias",
         default=None,
-        description="Refer to the docstring of the automatically_select_routing validator"
+        description="Refer to the docstring of the automatically_select_routing validator",
+        validate_default=True
     )
     _routing_options: tuple = PrivateAttr(
         default=(
@@ -56,18 +58,14 @@ class ContextBrokerCommunicatorConfig(FIWARECommunicatorConfig):
             'service',
         )
     )
-    entities_map: Dict[Tuple[AnyStr, AnyStr], ContextEntity] = Field(
-        description="Automatically generated map for "
-                    "entities to identify them based on id and type",
-        default=None
-    )
     time_format: str = Field(
         default="%Y-%m-%dT%H:%M:%S.%fZ",
         title="The format to convert fiware "
               "datetime into unix time"
     )
 
-    @validator("subtopics", always=True)
+    @field_validator("subtopics")
+    @classmethod
     def check_subtopics(cls, subtopics):
         """
         Overwrite default subtopics behaviour and
@@ -84,14 +82,14 @@ class ContextBrokerCommunicatorConfig(FIWARECommunicatorConfig):
             return subtopics
         return []
 
-    @validator("entities")
-    def parse_device_list(cls, entities, values):
+    @field_validator("entities")
+    def parse_device_list(cls, entities, info: FieldValidationInfo):
         if isinstance(entities, FilePath):
             entities = parse_file_as(List[ContextEntity], entities)
 
         with ContextBrokerClient(
-            url=values["cb_url"],
-            fiware_header=values["fiware_header"]
+            url=info.data["cb_url"],
+            fiware_header=info.data["fiware_header"]
         ) as httpc:
             # sync with context broker
             for entity in entities:
@@ -103,29 +101,18 @@ class ContextBrokerCommunicatorConfig(FIWARECommunicatorConfig):
 
         return entities
 
-    @validator("alias_routing", always=True)
-    def validate_alias_routing(cls, alias_routing, values):
+    @field_validator("alias_routing")
+    @classmethod
+    def validate_alias_routing(cls, alias_routing, info: FieldValidationInfo):
         """
         Trigger parent class to avoid root validator
         """
-        if "entities" not in values:
+        if "entities" not in info.data:
             return alias_routing
         return cls.super_check_alias_routing(
             alias_routing=alias_routing,
-            values=values
+            values=info.data
         )
-
-    @validator("entities_map", always=True)
-    def create_entities_map(cls, _, values):
-        """
-        Create the map to identify entities based on id and type.
-        """
-        if "entities" not in values:
-            return {}
-        entities_map = {}
-        for entity in values["entities"]:
-            entities_map[(entity.id, entity.type)] = entity
-        return entities_map
 
     @classmethod
     def automatically_select_routing(cls, values):
@@ -195,11 +182,16 @@ class ContextBrokerCommunicatorConfig(FIWARECommunicatorConfig):
 
 
 class ContextBrokerCommunicator(FIWARECommunicator):
-    config_type = ContextBrokerCommunicatorConfig
+    config: ContextBrokerCommunicatorConfig
     mqttc_type = PahoMQTTClient
 
     def __init__(self, config: dict, agent: Agent):
         super().__init__(config=config, agent=agent)
+        # Create enitities map
+        self.entities_map = {}
+        for entity in self.config.entities:
+            self.entities_map[(entity.id, entity.type)] = entity
+
         self._httpc = ContextBrokerClient(
             url=self.config.cb_url,
             fiware_header=self.config.fiware_header
@@ -266,7 +258,7 @@ class ContextBrokerCommunicator(FIWARECommunicator):
                              self.subscription_ids)
             return
         for item in payload.data:
-            entity = self.config.entities_map.get((item.id, item.type))
+            entity = self.entities_map.get((item.id, item.type))
             if entity is None:
                 self.logger.error("Received item for (%s, %s) does not match any entity.",
                                   item.id, item.type)
@@ -283,7 +275,6 @@ class ContextBrokerCommunicator(FIWARECommunicator):
                 )
                 # Extract time information:
                 if self.env.config.rt and self.env.config.factor == 1:
-                    # TODO: Remove if fiware enables TimeInstant faster as real-time.
                     if attr.name == "TimeInstant":
                         time_unix = (datetime.strptime(
                             attr.value,

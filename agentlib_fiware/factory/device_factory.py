@@ -2,11 +2,10 @@ import json
 import logging
 from pathlib import Path
 from pydantic import \
-    Field, \
+    field_validator, Field, \
     FilePath, \
-    parse_file_as, \
-    validator, \
-    root_validator
+    parse_file_as, FieldValidationInfo
+
 from typing import Dict, List, Union, Tuple
 from filip.models.base import DataType
 from filip.models.ngsi_v2.iot import \
@@ -21,9 +20,10 @@ from filip.clients.ngsi_v2.iota import IoTAClient
 from rdflib import URIRef
 
 from agentlib.core.module import BaseModuleConfig
-from agentlib.modules.iot.fiware.iota_communicator import FIWAREIoTAMQTTConfig
-
 from agentlib import AgentVariable
+
+from agentlib_fiware.modules.iota_mqtt.device_to_iotagent import FIWAREIoTAMQTTConfig
+
 
 logger = logging.getLogger(__name__)
 
@@ -36,14 +36,16 @@ class FiwareIoTADeviceFactoryConfig(ServiceGroup):
         default=None,
         description="string representing the Southbound resource that will be "
                     "used to assign a type to a device  (e.g.: pathname in the "
-                    "southbound port)."
+                    "southbound port).",
+        validate_default=True
     )
     device_filename: Union[FilePath, str] = Field(
         default=None,
         description="File where to store device configurations"
     )
 
-    @validator('device_filename')
+    @field_validator('device_filename')
+    @classmethod
     def check_nonexisting_device_file(cls, device_filename):
         """Check if the device_filename is a .json file."""
         if device_filename:
@@ -54,19 +56,16 @@ class FiwareIoTADeviceFactoryConfig(ServiceGroup):
                                 f'but should be a .json file.')
             return path
 
-    @root_validator
-    def validate_resource(cls, values):
-        resource = values['resource']
-        payload_protocol = values['payload_protocol']
-        if resource:
-            pass
-        elif payload_protocol == PayloadProtocol.IOTA_JSON:
-            values['resource'] = "/iot/json"
-        elif payload_protocol == PayloadProtocol.IOTA_UL:
-             values['resource'] = "/iot/d"
-        else:
-            raise ValueError("Missing resource")
-        return values
+    @field_validator("resource")
+    @classmethod
+    def validate_resource(cls, resource, info: FieldValidationInfo):
+        if resource is not None:
+            return resource
+        payload_protocol = info.data['payload_protocol']
+        if payload_protocol == PayloadProtocol.IOTA_JSON:
+            return "/iot/json"
+        if payload_protocol == PayloadProtocol.IOTA_UL:
+            return "/iot/d"
 
 
 class FiwareIoTADeviceFactory:

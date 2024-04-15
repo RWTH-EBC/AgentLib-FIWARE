@@ -7,12 +7,21 @@ from filip.models.ngsi_v2.iot import \
     ServiceGroup, \
     PayloadProtocol, \
     DeviceAttribute
-from pydantic import AnyHttpUrl, Field, PrivateAttr, FilePath, parse_file_as, validator
+from pydantic import (
+    FieldValidationInfo,
+    field_validator,
+    AnyHttpUrl,
+    Field,
+    PrivateAttr,
+    FilePath,
+    parse_file_as
+)
 
 from agentlib.modules.communicator.mqtt import \
     Agent, \
     AgentVariable
-from agentlib.modules.iot.fiware.communicator import (
+
+from agentlib_fiware.modules.iota_mqtt.base import (
     FIWARECommunicatorConfig,
     FIWARECommunicator
 )
@@ -43,7 +52,8 @@ class FIWAREIoTAMQTTConfig(FIWARECommunicatorConfig):
     alias_routing: str = Field(
         title="Which routing to use for the AgentVariables alias",
         default=None,
-        description="Refer to the docstring of the automatically_select_routing validator"
+        description="Refer to the docstring of the automatically_select_routing validator",
+        validate_default=True
     )
     _routing_options: tuple = PrivateAttr(
         default=(
@@ -54,27 +64,30 @@ class FIWAREIoTAMQTTConfig(FIWARECommunicatorConfig):
         )
     )
 
-    @validator("devices")
+    @field_validator("devices")
+    @classmethod
     def parse_device_list(cls, value):
         if isinstance(value, FilePath):
             return parse_file_as(List[Device], value)
         return value
 
-    @validator("alias_routing", always=True)
-    def validate_alias_routing(cls, alias_routing, values):
+    @field_validator("alias_routing")
+    @classmethod
+    def validate_alias_routing(cls, alias_routing, info: FieldValidationInfo):
         """
         Trigger parent class to avoid root validator
         """
         return cls.super_check_alias_routing(
             alias_routing=alias_routing,
-            values=values
+            values=info.data
         )
 
-    @validator("subtopics")
+    @field_validator("subtopics")
+    @classmethod
     def check_subtopics(cls, _):
         """
         Overwrite default subtopics behaviour and
-        allow no subtopics for the iota.
+        allow no subtopics for the iotagent.
         """
         logger.warning("%s can not use subtopics. We won't use it.", cls.__name__)
         return []
@@ -133,10 +146,7 @@ class FIWAREIoTAMQTTConfig(FIWARECommunicatorConfig):
 
 
 class FIWAREIoTAMQTTClient(FIWARECommunicator):
-    """
-    # TODO: Documentation
-    """
-    config_type = FIWAREIoTAMQTTConfig
+    config: FIWAREIoTAMQTTConfig
     mqttc_type = IoTAMQTTClient
 
     def __init__(self, config: dict, agent: Agent):
@@ -201,12 +211,6 @@ class FIWAREIoTAMQTTClient(FIWARECommunicator):
     ):
         """
         Publish the given output to IoTA-Agent
-
-        Args:
-            variable:
-
-        Returns:
-
         """
         self.logger.debug("Publishing attribute %s with value %s to mqtt.",
                           attribute.name, variable.value)

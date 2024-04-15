@@ -3,23 +3,24 @@
 """
 import logging
 from datetime import datetime
+from typing import List, Dict, Tuple
 
 import numpy as np
 from filip.clients.ngsi_v2 import ContextBrokerClient
 from filip.models.ngsi_v2.base import NamedMetadata
+from filip.models.ngsi_v2.context import ContextAttribute
 from filip.models.base import FiwareHeader
 from pydantic import (
     AnyHttpUrl, Field,
     field_validator, FieldValidationInfo
 )
 
-from agentlib import Agent, AgentVariable, AgentVariables, BaseModule, BaseModuleConfig
+from agentlib import Agent, AgentVariable, AgentVariables, BaseModule, BaseModuleConfig, Environment
 
 logger = logging.getLogger(__name__)
 
 
-class ScheduledServiceToContextBrokerCommunicatorConfig(BaseModuleConfig):
-
+class BaseScheduledServiceToContextBrokerConfig(BaseModuleConfig):
     fiware_header: FiwareHeader = Field(
         default=None,
         title="FIWARE Header",
@@ -28,12 +29,6 @@ class ScheduledServiceToContextBrokerCommunicatorConfig(BaseModuleConfig):
     cb_url: AnyHttpUrl = Field(
         title="Context Broker",
         description="Url of the FIWARE's Context Broker"
-    )
-    read_entity_attributes: AgentVariables = Field(
-        title="Specify which attributes to listen to.",
-        default=[],
-        description="List of AgentVariables. "
-                    "The name is an entity_name/attr_name combination to listen to."
     )
     update_entity_attributes: AgentVariables = Field(
         title="Specify which attributes to update in the CB.",
@@ -59,38 +54,27 @@ class ScheduledServiceToContextBrokerCommunicatorConfig(BaseModuleConfig):
                     "long in the data-broker queue. "
                     "This is a sign of bad connection or bad FIWARE performance."
     )
-
     _register_variable_callbacks: bool = True
 
-    @field_validator("read_entity_attributes", "update_entity_attributes")
+    @field_validator("update_entity_attributes")
     @classmethod
     def check_entity_attrs(cls, entity_attrs, info: FieldValidationInfo):
-        unique_entities = {}
-        # Get unique entity to avoid duplicate subscription in case of,
-        # e.g. self.config.read_entity_attributes = ["id1/attr_1", "id1/attr_2"]
-        for entity_attr in entity_attrs:
-            entity_id, attr_name = entity_attr.name.split("/")
-            if entity_id not in unique_entities:
-                unique_entities[entity_id] = [attr_name]
-            else:
-                unique_entities[entity_id].append(attr_name)
-
+        unique_entities = get_unique_entities(entity_attrs)
         with ContextBrokerClient(
-            url=info.data["cb_url"],
-            fiware_header=info.data["fiware_header"]
+                url=info.data["cb_url"],
+                fiware_header=info.data["fiware_header"]
         ) as httpc:
             # Check if the data even exists.
             for entity_id, attrs in unique_entities.items():
-                print("Getting entity", entity_id)
                 entity = httpc.get_entity(entity_id=entity_id)
-                for attr_name in attrs:
+                for attr_name, _ in attrs:
                     entity.get_attribute(attr_name)
 
         return entity_attrs
 
 
-class ScheduledServiceToContextBrokerCommunicator(BaseModule):
-    config: ScheduledServiceToContextBrokerCommunicatorConfig
+class BaseScheduledServiceToContextBroker(BaseModule):
+    config: BaseScheduledServiceToContextBrokerConfig
 
     def __init__(self, config: dict, agent: Agent):
         super().__init__(config=config, agent=agent)
@@ -99,54 +83,6 @@ class ScheduledServiceToContextBrokerCommunicator(BaseModule):
             fiware_header=self.config.fiware_header
         )
         self.logger.error(self._httpc.get_version())
-
-    def process(self):
-        while True:
-            # Check if the data even exists.
-            # TODO: Which option is best to get the entities
-            #   entity_ids = [entity_attr.name.split("/")[0] for entity_attr in self.config.read_entity_attributes]
-            #   self._httpc.get_entity_list()
-            for entity_attr in self.config.read_entity_attributes:
-                entity_id, attr_name = entity_attr.name.split("/")
-                entity = self._httpc.get_entity(entity_id=entity_id)
-                self._process_entity_and_send_to_databroker(entity=entity)
-            yield self.env.timeout(self.config.read_interval)
-
-    def _process_entity_and_send_to_databroker(self, entity):
-        entity_id = entity.id
-        for entity_attr in self.config.read_entity_attributes:
-            if entity_attr.name.startswith(entity_id):
-                attr_name = entity_attr.name.split("/")[-1]
-                try:
-                    attr = entity.get_attribute(attr_name)
-                    time_unix = self._extract_time(attr)
-                    self.set(
-                        name=entity_attr.name,
-                        value=attr.value,
-                        timestamp=time_unix
-                    )
-                    self.logger.debug(
-                        "Send variable '%s=%s' at time '%s' into data_broker",
-                        entity_attr.alias, attr.value, time_unix
-                    )
-                except KeyError as err:
-                    self.logger.error("Attribute '%s' not in entity '%s'. Error: %s",
-                                      attr_name, entity_id, err)
-
-    def _extract_time(self, attr):
-        # Extract time information:
-        if self.env.config.rt and self.env.config.factor == 1 and "TimeInstant" in attr.metadata:
-            time_unix = (datetime.strptime(
-                attr.metadata['TimeInstant'].value,
-                self.config.time_format
-            ) - datetime(1970, 1, 1)).total_seconds()
-        else:
-            # This case means we simulate faster than real time.
-            # In this case, using the time from FIWARE makes no sense
-            # as it would result in bad control behaviour, i.e. in a
-            # PID controller.
-            time_unix = self.env.time
-        return time_unix
 
     def register_callbacks(self):
         """
@@ -178,40 +114,73 @@ class ScheduledServiceToContextBrokerCommunicator(BaseModule):
         time_delay = time_start_update - variable.timestamp
         if time_delay > self.config.skip_update_after_x_seconds:
             self.logger.error("The update of '%s' is %s seconds out of sync, skipping the update",
-                             name, time_delay)
-        self.logger.info("Starting variable update '%s'",
-                         name)
+                              name, time_delay)
+
         entity_id, attr_name = name.split("/")
         try:
             entity = self._httpc.get_entity(entity_id=entity_id)
-            attr = entity.get_attribute(attribute_name=attr_name)
+            attribute = entity.get_attribute(attribute_name=attr_name)
         except KeyError as err:
             logger.error("Entity-attribute combination %s not found, can't update it."
                          "Error-message: %s", name, err)
             return
-        attr.value = variable.value
-        if "TimeInstant" in attr.metadata:
-            attr.metadata["TimeInstant"] = NamedMetadata(
-                name="TimeInstant",
-                type="DateTime",
-                value=datetime.fromtimestamp(variable.timestamp).strftime(self.config.time_format)
-            )
+
+        attribute.value = variable.value
+        attribute = update_attribute_time_instant(
+            attribute=attribute, time_format=self.config.time_format, timestamp=variable.timestamp
+        )
         self._httpc.update_entity_attribute(
             entity_id=entity_id,
             entity_type=entity.type,
-            attr=attr,
+            attr=attribute,
             override_metadata=True
         )
         self.logger.error(
             "Successfully updated entity attribute %s to %s for variable %s. Took %s seconds",
-            attr.model_dump_json(),
+            attribute.model_dump_json(),
             entity.model_dump_json(include={'service', 'service_path', 'id', 'type'}),
             variable.alias,
             self.env.time - time_start_update
         )
 
-    def terminate(self):
-        """Disconnect subscription ids"""
-        for subscription_id in self.subscription_ids:
-            self._httpc.delete_subscription(subscription_id=subscription_id)
-        super().terminate()
+
+
+def extract_time_from_attribute(attribute: ContextAttribute, env: Environment, time_format: str):
+    # Extract time information:
+    if env.config.rt and env.config.factor == 1 and "TimeInstant" in attribute.metadata:
+        time_unix = (datetime.strptime(
+            attribute.metadata['TimeInstant'].value,
+            time_format
+        ) - datetime(1970, 1, 1)).total_seconds()
+    else:
+        # This case means we simulate faster than real time.
+        # In this case, using the time from FIWARE makes no sense
+        # as it would result in bad control behaviour, i.e. in a
+        # PID controller.
+        time_unix = env.time
+    return time_unix
+
+
+def update_attribute_time_instant(attribute: ContextAttribute, timestamp: float, time_format: str):
+    if "TimeInstant" in attribute.metadata:
+        attribute.metadata["TimeInstant"] = NamedMetadata(
+            name="TimeInstant",
+            type="DateTime",
+            value=datetime.fromtimestamp(timestamp).strftime(time_format)
+        )
+    return attribute
+
+
+def get_unique_entities(entity_attrs: List[AgentVariable]) -> Dict[str, List[Tuple[str, AgentVariable]]]:
+    """
+    Get unique entity to avoid duplicate subscription in case of,
+    e.g. self.config.read_entity_attributes = ["id1/attr_1", "id1/attr_2"]
+    """
+    unique_entities = {}
+    for entity_attr in entity_attrs:
+        entity_id, attr_name = entity_attr.name.split("/")
+        if entity_id not in unique_entities:
+            unique_entities[entity_id] = [(attr_name, entity_attr)]
+        else:
+            unique_entities[entity_id].append((attr_name, entity_attr))
+    return unique_entities

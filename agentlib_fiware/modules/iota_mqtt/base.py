@@ -6,7 +6,7 @@ from filip.models import FiwareHeader
 
 from filip.types import AnyMqttUrl
 from paho.mqtt.client import MQTT_CLEAN_START_FIRST_ONLY
-from pydantic import Field, PrivateAttr, validator
+from pydantic import ConfigDict, Field, PrivateAttr
 
 from agentlib.modules.communicator.mqtt import \
     AgentVariable, \
@@ -15,12 +15,7 @@ from agentlib.modules.communicator.mqtt import \
 
 
 class FIWARECommunicatorConfig(BaseMQTTClientConfig):
-    class Config:
-        """
-        Pydantic internal model settings
-        """
-        # pylint: disable=too-few-public-methods
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid")
 
     mqtt_url: AnyMqttUrl = Field(
         default=None,
@@ -104,10 +99,7 @@ class FIWARECommunicatorConfig(BaseMQTTClientConfig):
 
 
 class FIWARECommunicator(BaseMqttClient):
-    """
-    # TODO: Documentation
-    """
-    config_type = FIWARECommunicatorConfig
+    config: FIWARECommunicatorConfig
     mqttc_type = IoTAMQTTClient
 
     def connect(self):
