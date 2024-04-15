@@ -14,12 +14,12 @@ from pydantic import (
 
 from agentlib import AgentVariables
 
-from agentlib_fiware.modules.scheduled_context_broker import base
+from agentlib_fiware.modules.context_broker import base
 
 logger = logging.getLogger(__name__)
 
 
-class EntitiesScheduledServiceToContextBrokerConfig(base.BaseScheduledServiceToContextBrokerConfig):
+class ScheduledEntitiesContextBrokerConfig(base.BaseContextBrokerConfig):
     read_entities: AgentVariables = Field(
         title="Specify which attributes to listen to.",
         default=[],
@@ -41,8 +41,8 @@ class EntitiesScheduledServiceToContextBrokerConfig(base.BaseScheduledServiceToC
         return entity_var
 
 
-class EntitiesScheduledServiceToContextBroker(base.BaseScheduledServiceToContextBroker):
-    config: EntitiesScheduledServiceToContextBrokerConfig
+class ScheduledEntitiesContextBroker(base.BaseContextBroker):
+    config: ScheduledEntitiesContextBrokerConfig
 
     def process(self):
         while True:

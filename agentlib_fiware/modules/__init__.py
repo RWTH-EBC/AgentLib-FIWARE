@@ -7,11 +7,11 @@ from agentlib.utils.plugin_import import ModuleImport
 MODULE_TYPES = {
     'service_to_cb': ModuleImport(
         import_path="digital_twin_services.communicator.service_to_cb",
-        class_name="ServiceToContextBrokerCommunicator"
+        class_name="ContextBrokerCommunicator"
     ),
     'scheduled_service_to_cb': ModuleImport(
         import_path="digital_twin_services.communicator.scheduled_service_to_cb",
-        class_name="ScheduledServiceToContextBrokerCommunicator"
+        class_name="ScheduledContextBrokerCommunicator"
     ),
     'fiware_data_acquisition': ModuleImport(
         import_path="digital_twin_services.data_acquisition.fiware",
@@ -19,10 +19,10 @@ MODULE_TYPES = {
     ),
     'scheduled_service_to_cb': ModuleImport(
         import_path="watchdogs.utils.scheduled_service_to_cb",
-        class_name="ScheduledServiceToContextBrokerCommunicator"
+        class_name="ScheduledContextBrokerCommunicator"
     ),
     'scheduled_service_to_cb_entity': ModuleImport(
         import_path="watchdogs.utils.custom_service_to_cb",
-        class_name="ScheduledServiceToContextBrokerCommunicatorWholeEntity"
+        class_name="ScheduledContextBrokerCommunicatorWholeEntity"
     )
 }

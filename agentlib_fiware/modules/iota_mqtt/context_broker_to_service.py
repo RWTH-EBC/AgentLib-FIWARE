@@ -3,7 +3,6 @@
 """
 import logging
 from typing import List, Union
-from datetime import datetime
 
 from filip.clients.ngsi_v2 import ContextBrokerClient
 from filip.models.ngsi_v2.context import ContextEntity, NamedCommand
@@ -28,7 +27,7 @@ from agentlib_fiware.modules.iota_mqtt.base import (
     FIWARECommunicatorConfig,
     FIWARECommunicator
 )
-
+from agentlib_fiware import utils
 
 logger = logging.getLogger(__name__)
 
@@ -88,8 +87,8 @@ class ContextBrokerCommunicatorConfig(FIWARECommunicatorConfig):
             entities = parse_file_as(List[ContextEntity], entities)
 
         with ContextBrokerClient(
-            url=info.data["cb_url"],
-            fiware_header=info.data["fiware_header"]
+                url=info.data["cb_url"],
+                fiware_header=info.data["fiware_header"]
         ) as httpc:
             # sync with context broker
             for entity in entities:
@@ -166,7 +165,7 @@ class ContextBrokerCommunicatorConfig(FIWARECommunicatorConfig):
         ]
         idx = self.get_routing_index(self.alias_routing)
         # Use short function to avoid if-else branches
-        return "/".join(entry_list[(-1-idx):])
+        return "/".join(entry_list[(-1 - idx):])
 
     def get_topic(self):
         """Get the subscription topic"""
@@ -251,11 +250,11 @@ class ContextBrokerCommunicator(FIWARECommunicator):
         """
         if self.env.t_start is None:
             return  # Not started yet
-        payload = Message.parse_raw(msg.payload.decode())
+        payload = Message.model_validate_json(msg.payload.decode())
         if payload.subscriptionId not in self.subscription_ids:
             self.logger.debug("Received unregistered subscription! %s not in %s",
-                             payload.subscriptionId,
-                             self.subscription_ids)
+                              payload.subscriptionId,
+                              self.subscription_ids)
             return
         for item in payload.data:
             entity = self.entities_map.get((item.id, item.type))
@@ -273,26 +272,9 @@ class ContextBrokerCommunicator(FIWARECommunicator):
                     name=attr.name,
                     entity_name=entity.id
                 )
-                # Extract time information:
-                if self.env.config.rt and self.env.config.factor == 1:
-                    if attr.name == "TimeInstant":
-                        time_unix = (datetime.strptime(
-                            attr.value,
-                            self.config.time_format
-                        ) - datetime(1970, 1, 1)).total_seconds()
-                    elif "TimeInstant" in attr.metadata:
-                        time_unix = (datetime.strptime(
-                            attr.metadata['TimeInstant'].value,
-                            self.config.time_format
-                        ) - datetime(1970, 1, 1)).total_seconds()
-                    else:
-                        time_unix = self.env.time
-                else:
-                    # This case means we simulate faster than real time.
-                    # In this case, using the time from FIWARE makes no sense
-                    # as it would result in bad control behaviour, i. e. in a
-                    # PID controller.
-                    time_unix = self.env.time
+                time_unix = utils.extract_time_from_attribute(
+                    attribute=attr, time_format=self.config.time_format, env=self.env
+                )
                 self.agent.data_broker.send_variable(
                     AgentVariable(
                         name=alias,
@@ -344,8 +326,8 @@ class ContextBrokerCommunicator(FIWARECommunicator):
                                  command=cmd)
         self.logger.debug(
             "Successfully send command %s to %s for variable %s! ",
-            cmd.json(),
-            entity.json(include={'service', 'service_path', 'id', 'type'}),
+            cmd.model_dump_json(),
+            entity.model_dump_json(include={'service', 'service_path', 'id', 'type'}),
             variable.alias
         )
 

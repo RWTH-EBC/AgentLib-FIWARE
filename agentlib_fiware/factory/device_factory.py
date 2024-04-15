@@ -311,7 +311,7 @@ def generate_emulator_agent(
                     "The following group config will be used:\n %s",
                     httpc.get_group(
                         resource=group.resource,
-                        apikey=group.apikey).json(indent=2)
+                        apikey=group.apikey).model_dump_json(indent=2)
                 )
 
     # Provision devices:
@@ -329,7 +329,7 @@ def generate_emulator_agent(
                 logging.info(
                     "The following device config will be used:\n %s",
                     httpc.get_device(
-                        device_id=dev.device_id).json(indent=2)
+                        device_id=dev.device_id).model_dump_json(indent=2)
                 )
 
     # Update configs

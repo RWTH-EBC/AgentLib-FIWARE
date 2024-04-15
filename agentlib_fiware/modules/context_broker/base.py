@@ -1,26 +1,24 @@
-"""
-
-"""
 import logging
-from datetime import datetime
 from typing import List, Dict, Tuple
 
 import numpy as np
 from filip.clients.ngsi_v2 import ContextBrokerClient
-from filip.models.ngsi_v2.base import NamedMetadata
-from filip.models.ngsi_v2.context import ContextAttribute
 from filip.models.base import FiwareHeader
 from pydantic import (
-    AnyHttpUrl, Field,
+    AnyHttpUrl, Field, ConfigDict,
     field_validator, FieldValidationInfo
 )
 
 from agentlib import Agent, AgentVariable, AgentVariables, BaseModule, BaseModuleConfig, Environment
 
+from agentlib_fiware import utils
+
 logger = logging.getLogger(__name__)
 
 
-class BaseScheduledServiceToContextBrokerConfig(BaseModuleConfig):
+class BaseContextBrokerConfig(BaseModuleConfig):
+    model_config = ConfigDict(extra="forbid")
+
     fiware_header: FiwareHeader = Field(
         default=None,
         title="FIWARE Header",
@@ -54,7 +52,6 @@ class BaseScheduledServiceToContextBrokerConfig(BaseModuleConfig):
                     "long in the data-broker queue. "
                     "This is a sign of bad connection or bad FIWARE performance."
     )
-    _register_variable_callbacks: bool = True
 
     @field_validator("update_entity_attributes")
     @classmethod
@@ -73,8 +70,8 @@ class BaseScheduledServiceToContextBrokerConfig(BaseModuleConfig):
         return entity_attrs
 
 
-class BaseScheduledServiceToContextBroker(BaseModule):
-    config: BaseScheduledServiceToContextBrokerConfig
+class BaseContextBroker(BaseModule):
+    config: BaseContextBrokerConfig
 
     def __init__(self, config: dict, agent: Agent):
         super().__init__(config=config, agent=agent)
@@ -126,7 +123,7 @@ class BaseScheduledServiceToContextBroker(BaseModule):
             return
 
         attribute.value = variable.value
-        attribute = update_attribute_time_instant(
+        attribute = utils.update_attribute_time_instant(
             attribute=attribute, time_format=self.config.time_format, timestamp=variable.timestamp
         )
         self._httpc.update_entity_attribute(
@@ -142,33 +139,6 @@ class BaseScheduledServiceToContextBroker(BaseModule):
             variable.alias,
             self.env.time - time_start_update
         )
-
-
-
-def extract_time_from_attribute(attribute: ContextAttribute, env: Environment, time_format: str):
-    # Extract time information:
-    if env.config.rt and env.config.factor == 1 and "TimeInstant" in attribute.metadata:
-        time_unix = (datetime.strptime(
-            attribute.metadata['TimeInstant'].value,
-            time_format
-        ) - datetime(1970, 1, 1)).total_seconds()
-    else:
-        # This case means we simulate faster than real time.
-        # In this case, using the time from FIWARE makes no sense
-        # as it would result in bad control behaviour, i.e. in a
-        # PID controller.
-        time_unix = env.time
-    return time_unix
-
-
-def update_attribute_time_instant(attribute: ContextAttribute, timestamp: float, time_format: str):
-    if "TimeInstant" in attribute.metadata:
-        attribute.metadata["TimeInstant"] = NamedMetadata(
-            name="TimeInstant",
-            type="DateTime",
-            value=datetime.fromtimestamp(timestamp).strftime(time_format)
-        )
-    return attribute
 
 
 def get_unique_entities(entity_attrs: List[AgentVariable]) -> Dict[str, List[Tuple[str, AgentVariable]]]:
