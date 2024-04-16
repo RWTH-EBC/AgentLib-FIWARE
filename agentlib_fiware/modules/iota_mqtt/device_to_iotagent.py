@@ -1,5 +1,6 @@
 import logging
-from typing import List, Union
+from typing import List, Union, Optional
+from pathlib import Path
 
 from filip.clients.mqtt import IoTAMQTTClient
 from filip.models.ngsi_v2.iot import \
@@ -13,8 +14,7 @@ from pydantic import (
     AnyHttpUrl,
     Field,
     PrivateAttr,
-    FilePath,
-    parse_file_as
+    FilePath
 )
 
 from agentlib.modules.communicator.mqtt import \
@@ -22,21 +22,22 @@ from agentlib.modules.communicator.mqtt import \
     AgentVariable
 
 from agentlib_fiware.modules.iota_mqtt.base import (
-    FIWARECommunicatorConfig,
-    FIWARECommunicator
+    BaseIoTACommunicatorConfig,
+    BaseIoTACommunicator
 )
+from agentlib_fiware.utils import parse_file_as
 
 logger = logging.getLogger(__name__)
 
 
-class FIWAREIoTAMQTTConfig(FIWARECommunicatorConfig):
+class IoTAMQTTConfig(BaseIoTACommunicatorConfig):
 
     iota_url: AnyHttpUrl = Field(
         default=None,
         title="IoT Agent",
         description="Host of the IoT Agent"
     )
-    devices: Union[List[Device], FilePath] = Field(
+    devices: Union[List[Device], Path] = Field(
         default=[],
         title="FIWARE IoT devices",
         description="List of FIWARE IoT device configurations"
@@ -49,7 +50,7 @@ class FIWAREIoTAMQTTConfig(FIWARECommunicatorConfig):
         description="List of FIWARE IoT device group configurations"
     )
     # Has to be defined after entities to avoid the root validator
-    alias_routing: str = Field(
+    alias_routing: Optional[str] = Field(
         title="Which routing to use for the AgentVariables alias",
         default=None,
         description="Refer to the docstring of the automatically_select_routing validator",
@@ -67,7 +68,7 @@ class FIWAREIoTAMQTTConfig(FIWARECommunicatorConfig):
     @field_validator("devices")
     @classmethod
     def parse_device_list(cls, value):
-        if isinstance(value, FilePath):
+        if isinstance(value, (Path, str)):
             return parse_file_as(List[Device], value)
         return value
 
@@ -101,7 +102,7 @@ class FIWAREIoTAMQTTConfig(FIWARECommunicatorConfig):
         2. alias_routing='device':
         If the devices contain only non-conflicting device_ids
         3. alias_routing='service_path':
-        Never, we assume only one FIWAREIoTAMQTTClient is present
+        Never, we assume only one DeviceIoTAMQTTCommunicator is present
         4. alias_routing='service':
         If the devices contain conflicting device_id and attr combinations
         """
@@ -145,8 +146,8 @@ class FIWAREIoTAMQTTConfig(FIWARECommunicatorConfig):
         return "/".join(entry_list[(-1-idx):])
 
 
-class FIWAREIoTAMQTTClient(FIWARECommunicator):
-    config: FIWAREIoTAMQTTConfig
+class DeviceIoTAMQTTCommunicator(BaseIoTACommunicator):
+    config: IoTAMQTTConfig
     mqttc_type = IoTAMQTTClient
 
     def __init__(self, config: dict, agent: Agent):

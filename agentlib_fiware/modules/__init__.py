@@ -4,25 +4,26 @@ use the agentlib together with FIWARE
 """
 from agentlib.utils.plugin_import import ModuleImport
 
+
 MODULE_TYPES = {
-    'service_to_cb': ModuleImport(
-        import_path="digital_twin_services.communicator.service_to_cb",
+    'iotamqtt.device': ModuleImport(
+        import_path="agentlib_fiware.modules.iota_mqtt.device_to_iotagent",
+        class_name="DeviceIoTAMQTTCommunicator"
+    ),
+    'iotamqtt.context_broker': ModuleImport(
+        import_path="agentlib_fiware.modules.iota_mqtt.context_broker_to_service",
         class_name="ContextBrokerCommunicator"
     ),
-    'scheduled_service_to_cb': ModuleImport(
-        import_path="digital_twin_services.communicator.scheduled_service_to_cb",
-        class_name="ScheduledContextBrokerCommunicator"
+    'context_broker.scheduled_attributes': ModuleImport(
+        import_path="agentlib_fiware.modules.context_broker.scheduled_attributes",
+        class_name="ScheduledAttributesContextBroker"
     ),
-    'fiware_data_acquisition': ModuleImport(
-        import_path="digital_twin_services.data_acquisition.fiware",
-        class_name="FiwareDataAcquisition"
+    'context_broker.scheduled_entities': ModuleImport(
+        import_path="agentlib_fiware.modules.context_broker.scheduled_entities",
+        class_name="ScheduledEntitiesContextBroker"
     ),
-    'scheduled_service_to_cb': ModuleImport(
-        import_path="watchdogs.utils.scheduled_service_to_cb",
-        class_name="ScheduledContextBrokerCommunicator"
+    'context_broker.notified_attributes': ModuleImport(
+        import_path="agentlib_fiware.modules.context_broker.notified_attributes",
+        class_name="NotifiedAttributesContextBroker"
     ),
-    'scheduled_service_to_cb_entity': ModuleImport(
-        import_path="watchdogs.utils.custom_service_to_cb",
-        class_name="ScheduledContextBrokerCommunicatorWholeEntity"
-    )
 }

@@ -4,7 +4,7 @@ from abc import abstractmethod
 from filip.clients.mqtt import IoTAMQTTClient
 from filip.models import FiwareHeader
 
-from filip.types import AnyMqttUrl
+from filip.custom_types import AnyMqttUrl
 from paho.mqtt.client import MQTT_CLEAN_START_FIRST_ONLY
 from pydantic import ConfigDict, Field, PrivateAttr
 
@@ -14,7 +14,7 @@ from agentlib.modules.communicator.mqtt import \
     BaseMQTTClientConfig
 
 
-class FIWARECommunicatorConfig(BaseMQTTClientConfig):
+class BaseIoTACommunicatorConfig(BaseMQTTClientConfig):
     model_config = ConfigDict(extra="forbid")
 
     mqtt_url: AnyMqttUrl = Field(
@@ -98,8 +98,8 @@ class FIWARECommunicatorConfig(BaseMQTTClientConfig):
         raise NotImplementedError
 
 
-class FIWARECommunicator(BaseMqttClient):
-    config: FIWARECommunicatorConfig
+class BaseIoTACommunicator(BaseMqttClient):
+    config: BaseIoTACommunicatorConfig
     mqttc_type = IoTAMQTTClient
 
     def connect(self):
@@ -128,5 +128,11 @@ class FIWARECommunicator(BaseMqttClient):
         function, we just don't need this.
         Additionally, we overwrite the register_callbacks function
         so this will never be called.
+        """
+        pass
+
+    def _send(self, payload: dict):
+        """
+        Do not send all shared variables from the base communicator in AgentLib.
         """
         pass

@@ -1,7 +1,8 @@
 import os
 import logging
 from agentlib.utils.multi_agent_system import LocalMASAgency
-from agentlib.modules.iot.fiware.utils import device_factory
+
+from agentlib_fiware.factory import device_factory
 
 
 def run_example(until, with_plots=True, log_level=logging.INFO, t_sample=60):

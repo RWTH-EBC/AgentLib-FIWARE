@@ -6,7 +6,7 @@
             "type": "simulator",
             "model": {
                 "type": "fmu",
-                "path": "../../multi-agent-systems/room_mas/models/SimpleRoom.fmu"
+                "path": "models/SimpleRoom.fmu"
             },
             "t_sample": 60,
             "inputs": [
@@ -26,15 +26,14 @@
             ]
         },
         {
-            "iota_url": "http://<YOUR.IP.GOES.HERE>:4041",
-            "mqtt_url": "mqtt://<YOUR.IP.GOES.HERE>:1883",
+            "iota_url": "http://digital_twin_fiware_vm:4041",
+            "mqtt_url": "mqtt://digital_twin_fiware_vm:1883",
             "fiware_header": {
                 "service_path": "/myEmulatorExample",
                 "service": "agentlib"
             },
             "module_id": "iotagent",
-            "type": "fiware_iota_client",
-            "agent_id": "SiL",
+            "type": "agentlib_fiware.iotamqtt.device",
             "devices": [
                 {
                     "timezone": "Europe/London",
@@ -54,7 +53,7 @@
                     "commands": [
                         {
                             "name": "Q_flow_heat",
-                            "type": "Number"
+                            "type": "command"
                         }
                     ],
                     "attributes": [],
@@ -80,7 +79,7 @@
                     "commands": [
                         {
                             "name": "T_oda",
-                            "type": "Number"
+                            "type": "command"
                         }
                     ],
                     "attributes": [],

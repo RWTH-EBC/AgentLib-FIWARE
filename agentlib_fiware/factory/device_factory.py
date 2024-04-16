@@ -4,9 +4,9 @@ from pathlib import Path
 from pydantic import \
     field_validator, Field, \
     FilePath, \
-    parse_file_as, FieldValidationInfo
+    FieldValidationInfo
 
-from typing import Dict, List, Union, Tuple
+from typing import Dict, List, Union, Tuple, Optional
 from filip.models.base import DataType
 from filip.models.ngsi_v2.iot import \
     Device, \
@@ -22,26 +22,26 @@ from rdflib import URIRef
 from agentlib.core.module import BaseModuleConfig
 from agentlib import AgentVariable
 
-from agentlib_fiware.modules.iota_mqtt.device_to_iotagent import FIWAREIoTAMQTTConfig
-
+from agentlib_fiware.modules.iota_mqtt.device_to_iotagent import DeviceIoTAMQTTCommunicator
+from agentlib_fiware.utils import parse_file_as
 
 logger = logging.getLogger(__name__)
 
 
 class FiwareIoTADeviceFactoryConfig(ServiceGroup):
     payload_protocol: PayloadProtocol = Field(
-        default=PayloadProtocol.IOTA_JSON
-    )
-    resource: str = Field(
-        default=None,
-        description="string representing the Southbound resource that will be "
-                    "used to assign a type to a device  (e.g.: pathname in the "
-                    "southbound port).",
+        default=PayloadProtocol.IOTA_JSON,
         validate_default=True
     )
     device_filename: Union[FilePath, str] = Field(
         default=None,
         description="File where to store device configurations"
+    )
+    resource: str = Field(
+        default="/iot/json",
+        description="string representing the Southbound resource that will be "
+                    "used to assign a type to a device  (e.g.: pathname in the "
+                    "southbound port)."
     )
 
     @field_validator('device_filename')
@@ -55,17 +55,6 @@ class FiwareIoTADeviceFactoryConfig(ServiceGroup):
                                 f'{path.suffix} '
                                 f'but should be a .json file.')
             return path
-
-    @field_validator("resource")
-    @classmethod
-    def validate_resource(cls, resource, info: FieldValidationInfo):
-        if resource is not None:
-            return resource
-        payload_protocol = info.data['payload_protocol']
-        if payload_protocol == PayloadProtocol.IOTA_JSON:
-            return "/iot/json"
-        if payload_protocol == PayloadProtocol.IOTA_UL:
-            return "/iot/d"
 
 
 class FiwareIoTADeviceFactory:
@@ -188,7 +177,7 @@ class FiwareIoTADeviceFactory:
 
 
 def generate_emulator_agent(
-        iotagent_cfg: Union[str, FIWAREIoTAMQTTConfig],
+        iotagent_cfg: Union[str, DeviceIoTAMQTTCommunicator],
         module_cfg: Union[str, BaseModuleConfig],
         device_factory_commands: FiwareIoTADeviceFactoryConfig,
         device_factory_attributes: FiwareIoTADeviceFactoryConfig,
@@ -284,12 +273,11 @@ def generate_emulator_agent(
         if "module_id" not in iotagent_cfg:
             iotagent_cfg["module_id"] = "iotagent"
         if "type" not in iotagent_cfg:
-            iotagent_cfg["type"] = "fiware_iota_client"
+            iotagent_cfg["type"] = "agentlib_fiware.iotamqtt.device"
     elif isinstance(iotagent_cfg, FIWAREIoTAMQTTConfig):
         iotagent_cfg = iotagent_cfg.dict()
     else:
         raise TypeError("Given iotagent_cfg is neither str nor FIWAREIoTAMQTTConfig.")
-    iotagent_cfg["agent_id"] = agent_id
     iotagent_cfg["devices"] = []
     iotagent_cfg["service_groups"] = []
     httpc = IoTAClient(url=iotagent_cfg["iota_url"],
@@ -351,8 +339,8 @@ def generate_emulator_agent(
         return agent_cfg, {}
 
     cb_cfg = {
-        "module_id": "fiware_cb_client",
-        "type": "fiware_cb_client"
+        "module_id": "agentlib_fiware.iotamqtt.context_broker",
+        "type": "agentlib_fiware.iotamqtt.context_broker"
     }
     # Add fiware_header
     cb_cfg["fiware_header"] = iotagent_cfg["fiware_header"]

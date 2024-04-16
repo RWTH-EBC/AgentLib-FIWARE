@@ -7,7 +7,7 @@ INSTALL_REQUIRES = [
 ]
 
 setuptools.setup(
-    name="agentlib_fiware",
+    name="cd .",
     version="0.1.0",
     author="Associates of the AGENT project",
     author_email="AGENT.Projekt@eonerc.rwth-aachen.de",

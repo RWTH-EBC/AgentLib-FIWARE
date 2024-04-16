@@ -2,7 +2,8 @@
 
 """
 import logging
-from typing import List, Union
+from typing import List, Union, Optional
+from pathlib import Path
 
 from filip.clients.ngsi_v2 import ContextBrokerClient
 from filip.models.ngsi_v2.context import ContextEntity, NamedCommand
@@ -16,34 +17,33 @@ from filip.models.ngsi_v2.subscriptions import \
 from paho.mqtt.client import Client as \
     PahoMQTTClient
 from pydantic import (
-    FieldValidationInfo,
+    FieldValidationInfo, field_validator,
     AnyHttpUrl, Field,
-    PrivateAttr, FilePath,
-    parse_file_as
+    PrivateAttr
 )
 from agentlib import Agent, AgentVariable
 
 from agentlib_fiware.modules.iota_mqtt.base import (
-    FIWARECommunicatorConfig,
-    FIWARECommunicator
+    BaseIoTACommunicatorConfig,
+    BaseIoTACommunicator
 )
 from agentlib_fiware import utils
 
 logger = logging.getLogger(__name__)
 
 
-class ContextBrokerCommunicatorConfig(FIWARECommunicatorConfig):
+class ContextBrokerCommunicatorConfig(BaseIoTACommunicatorConfig):
     cb_url: AnyHttpUrl = Field(
         title="Context Broker",
         description="Url of the FIWARE's Context Broker"
     )
-    entities: Union[List[ContextEntity], FilePath] = Field(
+    entities: Union[List[ContextEntity], Union[Path, str]] = Field(
         title="Context Entities",
         description="List of Context Entities in the Context Broker that the "
                     "communicator interacts with"
     )
     # Has to be defined after entities to avoid the root validator
-    alias_routing: str = Field(
+    alias_routing: Optional[str] = Field(
         title="Which routing to use for the AgentVariables alias",
         default=None,
         description="Refer to the docstring of the automatically_select_routing validator",
@@ -83,8 +83,8 @@ class ContextBrokerCommunicatorConfig(FIWARECommunicatorConfig):
 
     @field_validator("entities")
     def parse_device_list(cls, entities, info: FieldValidationInfo):
-        if isinstance(entities, FilePath):
-            entities = parse_file_as(List[ContextEntity], entities)
+        if isinstance(entities, (Path, str)):
+            entities = utils.parse_file_as(List[ContextEntity], entities)
 
         with ContextBrokerClient(
                 url=info.data["cb_url"],
@@ -106,8 +106,6 @@ class ContextBrokerCommunicatorConfig(FIWARECommunicatorConfig):
         """
         Trigger parent class to avoid root validator
         """
-        if "entities" not in info.data:
-            return alias_routing
         return cls.super_check_alias_routing(
             alias_routing=alias_routing,
             values=info.data
@@ -180,13 +178,13 @@ class ContextBrokerCommunicatorConfig(FIWARECommunicatorConfig):
             ])
 
 
-class ContextBrokerCommunicator(FIWARECommunicator):
+class ContextBrokerCommunicator(BaseIoTACommunicator):
     config: ContextBrokerCommunicatorConfig
     mqttc_type = PahoMQTTClient
 
     def __init__(self, config: dict, agent: Agent):
         super().__init__(config=config, agent=agent)
-        # Create enitities map
+        # Create entities map
         self.entities_map = {}
         for entity in self.config.entities:
             self.entities_map[(entity.id, entity.type)] = entity

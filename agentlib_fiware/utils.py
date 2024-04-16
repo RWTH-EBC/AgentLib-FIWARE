@@ -1,6 +1,11 @@
+import json
+from typing import Union
 from datetime import datetime
+from pathlib import Path
 
-from filip.models.ngsi_v2.context import NamedMetadata, ContextAttribute
+from pydantic import TypeAdapter
+from filip.models.ngsi_v2.context import ContextAttribute
+from filip.models.ngsi_v2.base import NamedMetadata
 
 from agentlib import Environment
 
@@ -29,3 +34,8 @@ def update_attribute_time_instant(attribute: ContextAttribute, timestamp: float,
             value=datetime.fromtimestamp(timestamp).strftime(time_format)
         )
     return attribute
+
+
+def parse_file_as(type_: type, filepath: Union[Path, str]):
+    with open(filepath, "r") as file:
+        return TypeAdapter(type_).validate_json(json.load(file))

@@ -1,12 +1,12 @@
 {
-    "module_id": "fiware_cb_client",
-    "type": "fiware_cb_client",
+    "module_id": "agentlib_fiware.iotamqtt.context_broker",
+    "type": "agentlib_fiware.iotamqtt.context_broker",
     "fiware_header": {
         "service_path": "/myEmulatorExample",
         "service": "agentlib"
     },
-    "cb_url": "http://<YOUR.IP.GOES.HERE>:1026",
-    "mqtt_url": "mqtt://<YOUR.IP.GOES.HERE>:1883",
+    "cb_url": "http://digital_twin_fiware_vm:1026",
+    "mqtt_url": "mqtt://digital_twin_fiware_vm:1883",
     "entities": [
         {
             "id": "Q_flow_heat",

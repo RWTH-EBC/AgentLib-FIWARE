@@ -1,6 +1,6 @@
 {
-  "iota_url": "http://<YOUR.IP.GOES.HERE>:4041",
-  "mqtt_url": "mqtt://<YOUR.IP.GOES.HERE>:1883",
+  "iota_url": "http://digital_twin_fiware_vm:4041",
+  "mqtt_url": "mqtt://digital_twin_fiware_vm:1883",
   "fiware_header": {
     "service_path": "/myEmulatorExample",
     "service": "agentlib"

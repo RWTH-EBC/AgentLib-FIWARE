@@ -3,7 +3,7 @@
   "type": "simulator",
   "model": {
     "type": "fmu",
-    "path": "../../multi-agent-systems/room_mas/models/SimpleRoom.fmu"
+    "path": "models/SimpleRoom.fmu"
   },
   "t_sample": 60,
   "inputs": [
