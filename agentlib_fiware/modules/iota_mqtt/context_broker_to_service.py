@@ -203,11 +203,10 @@ class ContextBrokerCommunicator(BaseIoTACommunicator):
         The callback for when the client receives a CONNACK response from the
         server.
         """
-        super()._connect_callback(client=client,
-                                  userdata=userdata,
-                                  flags=flags,
-                                  reasonCode=reasonCode,
-                                  properties=properties)
+        super()._connect_callback(
+            client=client, userdata=userdata, flags=flags,
+            reasonCode=reasonCode, properties=properties
+        )
         topic = self.config.get_topic()
         self.logger.error("Subscribed to topic %s", topic)
         self._mqttc.subscribe(topic=topic,
@@ -216,14 +215,14 @@ class ContextBrokerCommunicator(BaseIoTACommunicator):
     def create_subscription(self):
         """
         Creates a subscription in the cb which will
-        send a message to the specified mqtt broker using
+        publish a message to the specified mqtt broker using
         the defined topic (in the config) each time
-        some entity changes.
+        something in the entity changes.
         """
         topic = self.config.get_topic()
 
         for entity in self.config.entities:
-            entity_pattern = EntityPattern(**entity.dict())
+            entity_pattern = EntityPattern(**entity.model_dump())
             sub = Subscription(
                 description=f"{self.source}",
                 subject=Subject(
@@ -237,7 +236,7 @@ class ContextBrokerCommunicator(BaseIoTACommunicator):
             self.subscription_ids.append(
                 self._httpc.post_subscription(
                     subscription=sub,
-                    update=False)
+                    update=True)
             )
 
     def _message_callback(self, client, userdata, msg):
@@ -246,8 +245,6 @@ class ContextBrokerCommunicator(BaseIoTACommunicator):
         as long as it matches entities attributes, to the
         data_broker.
         """
-        if self.env.t_start is None:
-            return  # Not started yet
         payload = Message.model_validate_json(msg.payload.decode())
         if payload.subscriptionId not in self.subscription_ids:
             self.logger.debug("Received unregistered subscription! %s not in %s",

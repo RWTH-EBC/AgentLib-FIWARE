@@ -135,9 +135,6 @@ class NotifiedAttributesContextBroker(base.BaseContextBroker, BaseMqttClient):
         as long as it matches entities attributes, to the
         data_broker.
         """
-        if self.env.t_start is None:
-            return  # Agent has not started yet
-
         payload = Message.model_validate_json(msg.payload.decode())
         if payload.subscriptionId not in self.subscription_ids:
             self.logger.debug("Received unregistered subscription! %s not in %s",

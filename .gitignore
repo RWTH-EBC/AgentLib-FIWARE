@@ -1,6 +1,6 @@
 __pycache__/
 .idea/*
-agentlib.egg-info/*
+agentlib_fiware.egg-info/*
 .venv/*
 venv/*
 *.log

@@ -5,8 +5,8 @@
         "service_path": "/myEmulatorExample",
         "service": "agentlib"
     },
-    "cb_url": "http://digital_twin_fiware_vm:1026",
-    "mqtt_url": "mqtt://digital_twin_fiware_vm:1883",
+    "cb_url": "http://134.130.56.157:1026",
+    "mqtt_url": "mqtt://134.130.56.157:1883",
     "entities": [
         {
             "id": "Q_flow_heat",
