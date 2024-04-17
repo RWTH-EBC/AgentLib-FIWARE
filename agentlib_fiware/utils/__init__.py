@@ -1,13 +1,11 @@
 import json
-from typing import Union
 from datetime import datetime
 from pathlib import Path
+from typing import Union
 
-from pydantic import TypeAdapter
-from filip.models.ngsi_v2.context import ContextAttribute
 from filip.models.ngsi_v2.base import NamedMetadata
-
-from agentlib import Environment
+from filip.models.ngsi_v2.context import ContextAttribute
+from pydantic import TypeAdapter
 
 
 def extract_time_from_attribute(attribute: ContextAttribute, env: Environment, time_format: str):

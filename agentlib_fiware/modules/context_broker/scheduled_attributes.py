@@ -10,6 +10,7 @@ from filip.clients.ngsi_v2 import ContextBrokerClient
 
 from agentlib import AgentVariables, AgentVariable
 
+import agentlib_fiware.utils
 from agentlib_fiware.modules.context_broker import base
 
 logger = logging.getLogger(__name__)
@@ -68,7 +69,7 @@ def process_entity_attribute_and_send_to_databroker(
         module.logger.error("Attribute '%s' not in entity '%s'. Error: %s",
                             attr_name, entity.id, err)
         return
-    time_unix = utils.extract_time_from_attribute(
+    time_unix = agentlib_fiware.utils.extract_time_from_attribute(
         attribute=attr, env=module.env, time_format=module.config.time_format
     )
     module.set(

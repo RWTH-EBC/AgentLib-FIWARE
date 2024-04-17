@@ -1,6 +1,7 @@
+import json
 import logging
 
-from agentlib.modules.iot.fiware.utils import device_factory
+from agentlib_fiware.factory import device_factory
 
 
 def run_example():
@@ -11,14 +12,16 @@ def run_example():
         apikey="agentlib_fiware_123456789"
         )
 
-    device_factory.generate_emulator_agent(
+    agent_cfg, cb_cfg = device_factory.generate_emulator_agent(
         iotagent_cfg=r"configs\iotagent.json",
         module_cfg=r"configs\simulator.json",
         device_factory_attributes=factory_config,
         device_factory_commands=factory_config,
         agent_id="MyFiwareEmulator",
-        filepath="emulator_agent.json"
+        # filepath="emulator_agent.json"
     )
+    print(json.dumps(agent_cfg, indent=2))
+    print(json.dumps(cb_cfg, indent=2))
 
 
 if __name__ == "__main__":
