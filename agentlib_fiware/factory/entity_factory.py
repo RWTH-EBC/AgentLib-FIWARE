@@ -23,7 +23,8 @@ def generate_service_to_cb_config_and_entities(
         filepath: str = None,
         with_ql_subscription: bool = True,
         ql_url: str = None,
-        create_entities_for_read_fields: bool = False
+        create_entities_for_read_fields: bool = False,
+        yes_to_user_input: bool = False
 ) -> Tuple[Dict, Dict]:
     if isinstance(service_config, str):
         with open(service_config, "r") as fp:
@@ -88,7 +89,7 @@ def generate_service_to_cb_config_and_entities(
     if 'iota_url' in context_broker_config:
         context_broker_config.pop('iota_url')
 
-    _update = None
+    _update = None if not yes_to_user_input else True
     # Provision entity:
     with ContextBrokerClient(url=context_broker_config["cb_url"],
                                 fiware_header=context_broker_config["fiware_header"]) as httpc:

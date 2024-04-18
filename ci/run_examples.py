@@ -57,88 +57,32 @@ class TestExamples(unittest.TestCase):
         agent_results[module_name] = module_res
         return results
 
-    def test_mpc(self):
-        """Test the mpc agent example"""
+    def test_context_broker_communications(self):
         self._run_example_with_return(
-            file="one_room_mpc//physical//simple_mpc.py",
+            file="context_broker_communications.py",
             func_name="run_example",
             with_plots=False,
-            log_level=logging.FATAL,
-        )
-        self._run_example_with_return(
-            file="one_room_mpc//physical//mpc_trajectories.py",
-            func_name="run_example",
-            with_plots=False,
-            log_level=logging.FATAL,
-        )
-        self._run_example_with_return(
-            file="one_room_mpc//physical//mixed_integer_mpc.py",
-            func_name="run_example",
-            with_plots=False,
-            log_level=logging.FATAL,
-        )
-        """Test the mpc agent example"""
-        self._run_example_with_return(
-            file="one_room_mpc//physical//with_change_control_penalty.py",
-            func_name="run_example",
-            with_plots=False,
-            log_level=logging.FATAL,
-        )
-
-    def test_admm_local(self):
-        self._run_example_with_return(
-            file="admm//admm_example_local.py",
-            func_name="run_example",
-            with_plots=False,
-            until=1000,
+            until=20,
+            yes_to_user_input=True,
             log_level=logging.FATAL,
             testing=True,
         )
 
-    def test_admm_coordinated(self):
+    def test_pid_single_room(self):
         self._run_example_with_return(
-            file="admm//admm_example_coordinator.py",
+            file="pid_single_room.py",
             func_name="run_example",
             with_plots=False,
-            until=1000,
+            until=86400 / 2,
             log_level=logging.FATAL,
-        )
-
-    @pytest.mark.slow
-    def test_admm_realtime(self):
-        self._run_example_with_return(
-            file="admm//admm_example_main.py",
-            func_name="run_example",
-            with_plots=False,
-            until=1000,
-            log_level=logging.FATAL,
+            yes_to_user_input=True,
             testing=True,
         )
 
-    def test_exchange_admm(self):
+    def test_device_factory(self):
         self._run_example_with_return(
-            file="exchange_admm//admm_4rooms_main.py",
+            file="device_factory.py",
             func_name="run_example",
-            with_plots=False,
-            until=1000,
-            log_level=logging.FATAL,
+            yes_to_user_input=True,
+            testing=True,
         )
-        self._run_example_with_return(
-            file="exchange_admm//admm_4rooms_main_coord.py",
-            func_name="run_example",
-            with_plots=False,
-            until=1000,
-            log_level=logging.FATAL,
-        )
-
-    def test_admm_mp_broadcast(self):
-        self._run_example_with_return(
-            file="admm//admm_example_multiprocessing.py",
-            func_name="run_example",
-            with_plots=False,
-            until=1000,
-            log_level=logging.FATAL,
-            TESTING=True,
-        )
-
-

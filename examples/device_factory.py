@@ -4,7 +4,7 @@ import logging
 from agentlib_fiware.factory import device_factory
 
 
-def run_example():
+def run_example(yes_to_user_input: bool = False):
     logging.basicConfig(level="INFO")
     # create device factory
     factory_config = device_factory.FiwareIoTADeviceFactoryConfig(
@@ -18,6 +18,7 @@ def run_example():
         device_factory_attributes=factory_config,
         device_factory_commands=factory_config,
         agent_id="MyFiwareEmulator",
+        yes_to_user_input=yes_to_user_input,
         # filepath="emulator_agent.json"
     )
     print(json.dumps(agent_cfg, indent=2))

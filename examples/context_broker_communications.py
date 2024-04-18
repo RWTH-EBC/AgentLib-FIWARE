@@ -58,7 +58,7 @@ class ContextBrokerPingPong(BaseModule):
                          variable.name, variable.value, variable.timestamp)
 
 
-def run_example(until, log_level=logging.INFO):
+def run_example(until, log_level=logging.INFO, yes_to_user_input: bool = False):
     # Set the log-level
     logging.basicConfig(level=log_level)
     # Change the working directly so that relative paths work
@@ -155,7 +155,8 @@ def run_example(until, log_level=logging.INFO):
         service_config=ping_service,
         # We want to create entities for all variables in the field "ping", in this case, only one.
         update_fields="ping",
-        with_ql_subscription=False
+        with_ql_subscription=False,
+        yes_to_user_input=yes_to_user_input
     )
 
     # Create agent config

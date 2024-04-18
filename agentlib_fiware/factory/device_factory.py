@@ -187,6 +187,7 @@ def generate_emulator_agent(
         filepath: str = None,
         create_cb_communicator: bool = True,
         filepath_cb_communicator: str = None,
+        yes_to_user_input: bool = False
 ) -> Tuple[Dict, Dict]:
     """
     Function to generate an emulator agent.
@@ -218,6 +219,9 @@ def generate_emulator_agent(
         filepath_cb_communicator str:
             If given, config of the cb_communicator will be stored in the
             given path
+        yes_to_user_input bool:
+            If False, the user is asked via `input` if existing objects should
+            be updated.
     Returns:
         Dict: Config of the agent
         Dict: Config of the ContextBroker-Communicator module.
@@ -287,10 +291,14 @@ def generate_emulator_agent(
     try:
         httpc.post_groups(service_groups=service_groups, update=False)
     except IOError as err:
-        msg = f"Could not post service groups due to error: {err}. " \
-              f"Do you want to update existing service groups? (y/n)"
-        user_inp = input(msg)
-        if user_inp.lower() == "y":
+        if not yes_to_user_input:
+            msg = f"Could not post service groups due to error: {err}. " \
+                  f"Do you want to update existing service groups? (y/n)"
+            user_inp = input(msg)
+            _update = user_inp.lower() == "y"
+        else:
+            _update = True
+        if _update:
             httpc.post_groups(service_groups=service_groups, update=True)
         else:
             logging.info("Taking input as a no.")

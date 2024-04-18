@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from agentlib_fiware.factory import device_factory
 
 
-def run_example(until, with_plots=True, log_level=logging.INFO, t_sample=60):
+def run_example(until, with_plots=True, log_level=logging.INFO, t_sample=60, yes_to_user_input: bool = False):
     # Set the log-level
     logging.basicConfig(level=log_level)
     # Change the working directly so that relative paths work
@@ -22,6 +22,7 @@ def run_example(until, with_plots=True, log_level=logging.INFO, t_sample=60):
         device_factory_attributes=factory_config,
         device_factory_commands=factory_config,
         agent_id="SiL",
+        yes_to_user_input=yes_to_user_input
         # filepath="configs/emulator_agent.json",
         # filepath_cb_communicator="configs/cb_module.json"
     )
