@@ -249,7 +249,9 @@ class ContextBrokerCommunicator(BaseIoTACommunicator):
             cmds = item.get_commands()
             self.logger.debug("Found entity %s with properties %s",
                               entity.id, [prop.name for prop in props])
-            for attr in [attr for attr in props if attr not in cmds]:
+            for attr in props:
+                if attr in cmds or attr.name == "TimeInstant":
+                    continue
                 alias = self.config.get_alias_for_attribute_name(
                     name=attr.name,
                     entity_name=entity.id

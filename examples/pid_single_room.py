@@ -22,7 +22,7 @@ def run_example(until, with_plots=True, log_level=logging.INFO, t_sample=60, yes
         device_factory_attributes=factory_config,
         device_factory_commands=factory_config,
         agent_id="SiL",
-        yes_to_user_input=yes_to_user_input
+        yes_to_user_input=yes_to_user_input,
         # filepath="configs/emulator_agent.json",
         # filepath_cb_communicator="configs/cb_module.json"
     )
@@ -39,8 +39,8 @@ def run_example(until, with_plots=True, log_level=logging.INFO, t_sample=60, yes
     }
 
     mas = LocalMASAgency(agent_configs=[emulator_agent_cfg, ag_config_virtual],
-                         env={"rt": True, "factor": 1 / t_sample, "t_sample": t_sample},
-                         variable_logging=True)
+                         env={"rt": True, "factor": 1 / t_sample, "t_sample": 1},
+                         variable_logging=True, log_level="DEBUG")
     mas.run(until=until)
     results = mas.get_results()
 
