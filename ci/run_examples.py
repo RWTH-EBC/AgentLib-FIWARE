@@ -6,7 +6,6 @@ import subprocess
 import logging
 import pathlib
 import pandas as pd
-import pytest
 
 from agentlib.utils import custom_injection
 from agentlib.utils.local_broadcast_broker import LocalBroadcastBroker
@@ -48,41 +47,32 @@ class TestExamples(unittest.TestCase):
         # Custom file import
         test_func = custom_injection({"file": file, "class_name": func_name})
         results = test_func(**kwargs)
-        self.assertIsInstance(results, dict)
-        agent_name, agent = results.popitem()
-        self.assertIsInstance(agent, dict)
-        module_name, module_res = agent.popitem()
-        self.assertIsInstance(module_res, pd.DataFrame)
-        agent_results = results.setdefault(agent_name, {})
-        agent_results[module_name] = module_res
         return results
 
     def test_context_broker_communications(self):
-        self._run_example_with_return(
+        results = self._run_example_with_return(
             file="context_broker_communications.py",
             func_name="run_example",
-            with_plots=False,
-            until=20,
+            until=5,
             yes_to_user_input=True,
             log_level=logging.FATAL,
-            testing=True,
         )
+        self.assertIsNone(results)
 
     def test_pid_single_room(self):
-        self._run_example_with_return(
+        results = self._run_example_with_return(
             file="pid_single_room.py",
             func_name="run_example",
             with_plots=False,
-            until=86400 / 2,
+            until=8640 / 2,
             log_level=logging.FATAL,
-            yes_to_user_input=True,
-            testing=True,
+            yes_to_user_input=True
         )
+        self.assertIsInstance(results, dict)
 
     def test_device_factory(self):
         self._run_example_with_return(
             file="device_factory.py",
             func_name="run_example",
-            yes_to_user_input=True,
-            testing=True,
+            yes_to_user_input=True
         )

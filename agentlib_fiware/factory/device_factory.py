@@ -4,7 +4,7 @@ from pathlib import Path
 from pydantic import \
     field_validator, Field, \
     FilePath, \
-    FieldValidationInfo
+    ValidationInfo
 
 from typing import Dict, List, Union, Tuple, Optional
 from filip.models.base import DataType
@@ -82,12 +82,12 @@ class FiwareIoTADeviceFactory:
     def config(self, config: Union[FiwareIoTADeviceFactoryConfig, dict, str]):
         """Set a new config"""
         if isinstance(config, FiwareIoTADeviceFactoryConfig):
-            self._config = config.copy()
+            self._config = config.model_copy()
         elif isinstance(config, str):
             self._config = FiwareIoTADeviceFactoryConfig.parse_raw(config)
         else:
             self._config = \
-                FiwareIoTADeviceFactoryConfig.parse_obj(config.copy())
+                FiwareIoTADeviceFactoryConfig.parse_obj(config.model_copy())
 
     @property
     def devices(self):
@@ -141,7 +141,7 @@ class FiwareIoTADeviceFactory:
             service_group: ServiceGroup = None):
 
         if not service_group:
-            service_group = ServiceGroup(**self.config.dict())
+            service_group = ServiceGroup(**self.config.model_dump())
         if not device_id:
             if service_group.defaultEntityNameConjunction:
                 pass
@@ -235,7 +235,7 @@ def generate_emulator_agent(
         with open(module_cfg, "r") as fp:
             module_cfg = json.load(fp)
     elif isinstance(module_cfg, BaseModuleConfig):
-        module_cfg = module_cfg.dict()
+        module_cfg = module_cfg.model_dump()
     else:
         raise TypeError("Given module_cfg is neither str nor a BaseModuleConfig.")
 
@@ -263,7 +263,7 @@ def generate_emulator_agent(
             command_variables=[var]
         )
 
-    service_groups = [ServiceGroup(**sp.dict(include={"apikey", "resource"}))
+    service_groups = [ServiceGroup(**sp.model_dump(include={"apikey", "resource"}))
                       for sp in [device_factory_commands, device_factory_attributes]]
     if service_groups[0] == service_groups[1]:
         service_groups = [service_groups[0]]
@@ -279,7 +279,7 @@ def generate_emulator_agent(
         if "type" not in iotagent_cfg:
             iotagent_cfg["type"] = "agentlib_fiware.iotamqtt.device"
     elif isinstance(iotagent_cfg, FIWAREIoTAMQTTConfig):
-        iotagent_cfg = iotagent_cfg.dict()
+        iotagent_cfg = iotagent_cfg.model_dump()
     else:
         raise TypeError("Given iotagent_cfg is neither str nor FIWAREIoTAMQTTConfig.")
     iotagent_cfg["devices"] = []
@@ -314,10 +314,14 @@ def generate_emulator_agent(
     try:
         httpc.post_devices(devices=devices, update=False)
     except IOError as err:
-        msg = f"Could not post devices due to error: {err}. " \
-              f"Do you want to update existing devices? (y/n)"
-        user_inp = input(msg)
-        if user_inp.lower() == "y":
+        if not yes_to_user_input:
+            msg = f"Could not post devices due to error: {err}. " \
+                  f"Do you want to update existing devices? (y/n)"
+            user_inp = input(msg)
+            _update = user_inp.lower() == "y"
+        else:
+            _update = True
+        if _update:
             httpc.post_devices(devices=devices, update=True)
         else:
             logger.info("Taking input as a no.")
@@ -329,8 +333,8 @@ def generate_emulator_agent(
                 )
 
     # Update configs
-    iotagent_cfg["devices"] = [d.dict() for d in devices]
-    iotagent_cfg["service_groups"] = [s.dict() for s in service_groups]
+    iotagent_cfg["devices"] = [d.model_dump() for d in devices]
+    iotagent_cfg["service_groups"] = [s.model_dump() for s in service_groups]
 
     # Generate agent config
     agent_cfg = {"id": agent_id,
@@ -363,7 +367,7 @@ def generate_emulator_agent(
             ContextEntity(
                 id=device.entity_name,
                 type=device.entity_type
-            ).dict()
+            ).model_dump()
         )
 
     # Check if to save.

@@ -5,7 +5,7 @@ from typing import List
 from pydantic import (
     Field,
     field_validator,
-    FieldValidationInfo
+    ValidationInfo
 )
 
 from agentlib import AgentVariables, Agent
@@ -42,7 +42,7 @@ class NotifiedAttributesContextBrokerConfig(base.BaseContextBrokerConfig, BaseMQ
 
     @field_validator("read_entity_attributes")
     @classmethod
-    def check_read_entity_attrs(cls, entity_attrs, info: FieldValidationInfo):
+    def check_read_entity_attrs(cls, entity_attrs, info: ValidationInfo):
         return cls.check_entity_attrs(entity_attrs=entity_attrs, info=info)
 
 
@@ -94,7 +94,7 @@ class NotifiedAttributesContextBroker(base.BaseContextBroker, BaseMqttClient):
         topic = self.get_topic()
         for entity_id, attrs in self._unique_entities.items():
             entity = self._httpc.get_entity(entity_id=entity_id)
-            entity_pattern = EntityPattern(**entity.dict())
+            entity_pattern = EntityPattern(**entity.model_dump())
             # Post new subscription
             sub = Subscription(
                 description=f"{self.source}",

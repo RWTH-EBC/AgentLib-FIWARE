@@ -6,7 +6,7 @@ from filip.clients.ngsi_v2 import ContextBrokerClient
 from filip.models.base import FiwareHeader
 from pydantic import (
     AnyHttpUrl, Field, ConfigDict,
-    field_validator, FieldValidationInfo
+    field_validator, ValidationInfo
 )
 
 from agentlib import Agent, AgentVariable, AgentVariables, BaseModule, BaseModuleConfig, Environment
@@ -49,7 +49,7 @@ class BaseContextBrokerConfig(BaseModuleConfig):
 
     @field_validator("update_entity_attributes")
     @classmethod
-    def check_entity_attrs(cls, entity_attrs, info: FieldValidationInfo):
+    def check_entity_attrs(cls, entity_attrs, info: ValidationInfo):
         unique_entities = get_unique_entities(entity_attrs)
         with ContextBrokerClient(
                 url=info.data["cb_url"],

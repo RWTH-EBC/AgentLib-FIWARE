@@ -1,11 +1,14 @@
 import json
 import logging
+import os
 
 from agentlib_fiware.factory import device_factory
 
 
 def run_example(yes_to_user_input: bool = False):
     logging.basicConfig(level="INFO")
+    # Change the working directly so that relative paths work
+    os.chdir(os.path.abspath(os.path.dirname(__file__)))
     # create device factory
     factory_config = device_factory.FiwareIoTADeviceFactoryConfig(
         device_filename='./devices.json',

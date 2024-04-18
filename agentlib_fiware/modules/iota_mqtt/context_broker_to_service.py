@@ -17,7 +17,7 @@ from filip.models.ngsi_v2.subscriptions import \
 from paho.mqtt.client import Client as \
     PahoMQTTClient
 from pydantic import (
-    FieldValidationInfo, field_validator,
+    ValidationInfo, field_validator,
     AnyHttpUrl, Field,
     PrivateAttr
 )
@@ -82,7 +82,7 @@ class ContextBrokerCommunicatorConfig(BaseIoTACommunicatorConfig):
         return []
 
     @field_validator("entities")
-    def parse_device_list(cls, entities, info: FieldValidationInfo):
+    def parse_device_list(cls, entities, info: ValidationInfo):
         if isinstance(entities, (Path, str)):
             entities = utils.parse_file_as(List[ContextEntity], entities)
 
@@ -102,7 +102,7 @@ class ContextBrokerCommunicatorConfig(BaseIoTACommunicatorConfig):
 
     @field_validator("alias_routing")
     @classmethod
-    def validate_alias_routing(cls, alias_routing, info: FieldValidationInfo):
+    def validate_alias_routing(cls, alias_routing, info: ValidationInfo):
         """
         Trigger parent class to avoid root validator
         """

@@ -3,7 +3,7 @@ import logging
 from pydantic import (
     Field,
     field_validator,
-    FieldValidationInfo
+    ValidationInfo
 )
 from filip.models.ngsi_v2.context import ContextEntity
 from filip.clients.ngsi_v2 import ContextBrokerClient
@@ -33,7 +33,7 @@ class ScheduledAttributesContextBrokerConfig(base.BaseContextBrokerConfig):
 
     @field_validator("read_entity_attributes")
     @classmethod
-    def check_read_entity_attrs(cls, entity_attrs, info: FieldValidationInfo):
+    def check_read_entity_attrs(cls, entity_attrs, info: ValidationInfo):
         return cls.check_entity_attrs(entity_attrs=entity_attrs, info=info)
 
 

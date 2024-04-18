@@ -9,7 +9,7 @@ from filip.clients.ngsi_v2 import ContextBrokerClient
 from pydantic import (
     Field,
     field_validator,
-    FieldValidationInfo
+    ValidationInfo
 )
 
 from agentlib import AgentVariables
@@ -34,7 +34,7 @@ class ScheduledEntitiesContextBrokerConfig(base.BaseContextBrokerConfig):
 
     @field_validator("read_entities")
     @classmethod
-    def check_entities(cls, entities, info: FieldValidationInfo):
+    def check_entities(cls, entities, info: ValidationInfo):
         with ContextBrokerClient(
                 url=info.data["cb_url"],
                 fiware_header=info.data["fiware_header"]

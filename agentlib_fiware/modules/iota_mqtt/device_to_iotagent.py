@@ -9,7 +9,7 @@ from filip.models.ngsi_v2.iot import \
     PayloadProtocol, \
     DeviceAttribute
 from pydantic import (
-    FieldValidationInfo,
+    ValidationInfo,
     field_validator,
     AnyHttpUrl,
     Field,
@@ -74,7 +74,7 @@ class IoTAMQTTConfig(BaseIoTACommunicatorConfig):
 
     @field_validator("alias_routing")
     @classmethod
-    def validate_alias_routing(cls, alias_routing, info: FieldValidationInfo):
+    def validate_alias_routing(cls, alias_routing, info: ValidationInfo):
         """
         Trigger parent class to avoid root validator
         """
