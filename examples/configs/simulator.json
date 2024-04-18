@@ -6,6 +6,7 @@
     "path": "models/SimpleRoom.fmu"
   },
   "t_sample": 60,
+  "log_level": "DEBUG",
   "inputs": [
     {
       "name": "Q_flow_heat",
