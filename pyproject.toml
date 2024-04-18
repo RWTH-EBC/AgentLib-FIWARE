@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentlib_fiware"
+authors = [
+    { name = "Associates of the AGENT and DZWi project", email = "AGENT.Projekt@eonerc.rwth-aachen.de" }
+]
+description = "AgentLib plugin to communicate with FIWARE."
+readme = "README.md"
+requires-python = ">=3.8"
+keywords = [
+    "agents", "modular",
+    "control", "distributed", "digital twin"
+]
+license = { text = "BSD-3-Clause" }
+classifiers = [
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+]
+dependencies = [
+    'filip>=0.3.0',
+    'agentlib>=0.8.2',
+]
+dynamic = ["version"]
+
+[package.urls]
+homepage = "https://github.com/RWTH-EBC/AgentLib-fiware"
+documentation = "https://github.com/RWTH-EBC/AgentLib-fiware"
