@@ -39,12 +39,6 @@ class BaseContextBrokerConfig(BaseModuleConfig):
         title="The format to convert fiware "
               "datetime into unix time"
     )
-    read_interval: float = Field(
-        default=5,
-        title="Read Interval",
-        description="Interval in which the service "
-                    "reads the attributes from the context broker"
-    )
     skip_update_after_x_seconds: float = Field(
         default=np.inf,
         title="Skip update if x seconds too old",
@@ -79,7 +73,7 @@ class BaseContextBroker(BaseModule):
             url=self.config.cb_url,
             fiware_header=self.config.fiware_header
         )
-        self.logger.error(self._httpc.get_version())
+        self.logger.debug("HTTPC version is %s", self._httpc.get_version())
 
     def register_callbacks(self):
         """
@@ -132,7 +126,7 @@ class BaseContextBroker(BaseModule):
             attr=attribute,
             override_metadata=True
         )
-        self.logger.error(
+        self.logger.info(
             "Successfully updated entity attribute %s to %s for variable %s. Took %s seconds",
             attribute.model_dump_json(),
             entity.model_dump_json(include={'service', 'service_path', 'id', 'type'}),

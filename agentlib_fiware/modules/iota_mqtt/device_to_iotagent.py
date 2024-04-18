@@ -157,36 +157,20 @@ class DeviceIoTAMQTTCommunicator(BaseIoTACommunicator):
             self._mqttc.add_service_group(group)
         for device in self.config.devices:
             self._mqttc.add_device(device)
-        self.register_attr_callbacks()
 
-    def _connect_callback(self,
-                          client,
-                          userdata,
-                          flags,
-                          reasonCode,
-                          properties):
-        super()._connect_callback(client=client,
-                                  userdata=userdata,
-                                  flags=flags,
-                                  reasonCode=reasonCode,
-                                  properties=properties)
-        """
-        Subscribing in on_connect() means that if we lose the connection and
-        reconnect then subscriptions will be renewed.
-        Hence, we update the subscription and add the topics for IoTA
-        to the list of subtopics if not already present.        
-        """
+    def get_all_topics(self):
+        subtopics = self.config.subtopics
         for device in self.config.devices:
             topic = f"{device.apikey}/{device.device_id}/cmd"
-            if topic not in self.config.subtopics:
-                self.config.subtopics.append(topic)
-            self._mqttc.subscribe(topic=topic, qos=self.config.qos)
+            if topic not in subtopics:
+                subtopics.append(topic)
+        return subtopics
 
-    def register_attr_callbacks(self):
+    def register_callbacks(self):
         """
         Register all outputs to the callback function.
         """
-        for device in self._mqttc.devices:
+        for device in self.config.devices:
             for attr in device.attributes:
                 alias = self.config.get_alias_for_attribute_name(
                     name=attr.name,

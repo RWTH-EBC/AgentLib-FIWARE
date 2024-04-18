@@ -195,22 +195,9 @@ class ContextBrokerCommunicator(BaseIoTACommunicator):
         )
         self.subscription_ids: List[str] = []
         self.create_subscription()
-        self.register_cb_cmd_callbacks()
 
-    def _connect_callback(self, client, userdata, flags, reasonCode,
-                          properties):
-        """
-        The callback for when the client receives a CONNACK response from the
-        server.
-        """
-        super()._connect_callback(
-            client=client, userdata=userdata, flags=flags,
-            reasonCode=reasonCode, properties=properties
-        )
-        topic = self.config.get_topic()
-        self.logger.error("Subscribed to topic %s", topic)
-        self._mqttc.subscribe(topic=topic,
-                              qos=self.config.qos)
+    def get_all_topics(self):
+        return [self.config.get_topic() + "/#"]
 
     def create_subscription(self):
         """
@@ -283,7 +270,7 @@ class ContextBrokerCommunicator(BaseIoTACommunicator):
                     alias, attr.value, time_unix
                 )
 
-    def register_cb_cmd_callbacks(self):
+    def register_callbacks(self):
         """
         Registers the callbacks for data stream from other agents.
         """

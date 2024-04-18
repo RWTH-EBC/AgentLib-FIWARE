@@ -1,13 +1,15 @@
 import logging
 
+from typing import List
+
 from pydantic import (
     Field,
     field_validator,
     FieldValidationInfo
 )
 
-from agentlib import AgentVariables
-from filip.types import AnyMqttUrl
+from agentlib import AgentVariables, Agent
+from filip.custom_types import AnyMqttUrl
 from filip.models.ngsi_v2.subscriptions import \
     EntityPattern, \
     Message, \
@@ -38,18 +40,6 @@ class NotifiedAttributesContextBrokerConfig(base.BaseContextBrokerConfig, BaseMQ
         description="Host if the MQTT Broker for IoT Agent communication"
     )
 
-    def get_topic(self):
-        """Get the subscription topic"""
-        if self.subtopics:
-            return self.subtopics[0]
-        return "/".join([
-            self.prefix,
-            self.fiware_header.service.strip("/"),
-            self.fiware_header.service_path.strip("/"),
-            "ContextBrokerSubscriptions",
-            self.agent_id + "_" + self.module_id
-        ])
-
     @field_validator("read_entity_attributes")
     @classmethod
     def check_read_entity_attrs(cls, entity_attrs, info: FieldValidationInfo):
@@ -75,20 +65,24 @@ class NotifiedAttributesContextBroker(base.BaseContextBroker, BaseMqttClient):
         self.subscription_ids: List[str] = []
         self.create_subscription()
 
-    def _connect_callback(self, client, userdata, flags, reasonCode,
-                          properties):
-        """
-        The callback for when the client receives a CONNACK response from the
-        server.
-        """
-        super()._connect_callback(client=client,
-                                  userdata=userdata,
-                                  flags=flags,
-                                  reasonCode=reasonCode,
-                                  properties=properties)
-        self.logger.info("Subscribing to %s", self.config.get_topic() + "/#")
-        self._mqttc.subscribe(topic=self.config.get_topic() + "/#",
-                              qos=self.config.qos)
+    @property
+    def url(self) -> AnyMqttUrl:
+        return self.config.mqtt_url
+
+    def get_topic(self):
+        """Get the subscription topic"""
+        if self.config.subtopics:
+            return self.config.subtopics[0]
+        return "/".join([
+            self.config.prefix,
+            self.config.fiware_header.service.strip("/"),
+            self.config.fiware_header.service_path.strip("/"),
+            "ContextBrokerSubscriptions",
+            self.agent.id + "_" + self.id
+        ])
+
+    def get_all_topics(self):
+        return [self.get_topic() + "/#"]
 
     def create_subscription(self):
         """
@@ -97,7 +91,7 @@ class NotifiedAttributesContextBroker(base.BaseContextBroker, BaseMqttClient):
         the defined topic (in the config) each time
         some entity changes.
         """
-        topic = self.config.get_topic()
+        topic = self.get_topic()
         for entity_id, attrs in self._unique_entities.items():
             entity = self._httpc.get_entity(entity_id=entity_id)
             entity_pattern = EntityPattern(**entity.dict())
@@ -106,7 +100,7 @@ class NotifiedAttributesContextBroker(base.BaseContextBroker, BaseMqttClient):
                 description=f"{self.source}",
                 subject=Subject(
                     entities=[entity_pattern],
-                    condition={"attrs": attrs[0]}
+                    condition={"attrs": [attr_tuple[0] for attr_tuple in attrs]}
                 ),
                 notification=Notification(
                     mqtt=Mqtt(url=self.config.mqtt_url,

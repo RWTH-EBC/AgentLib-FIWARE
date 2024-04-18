@@ -7,6 +7,8 @@ from filip.models.ngsi_v2.base import NamedMetadata
 from filip.models.ngsi_v2.context import ContextAttribute
 from pydantic import TypeAdapter
 
+from agentlib import Environment
+
 
 def extract_time_from_attribute(attribute: ContextAttribute, env: Environment, time_format: str):
     # Extract time information:

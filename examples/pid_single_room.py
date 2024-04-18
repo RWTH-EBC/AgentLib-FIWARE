@@ -22,8 +22,8 @@ def run_example(until, with_plots=True, log_level=logging.INFO, t_sample=60):
         device_factory_attributes=factory_config,
         device_factory_commands=factory_config,
         agent_id="SiL",
-        filepath="configs/emulator_agent.json",
-        filepath_cb_communicator="configs/cb_module.json"
+        # filepath="configs/emulator_agent.json",
+        # filepath_cb_communicator="configs/cb_module.json"
     )
     # Insert Outdoor air temperature
     emulator_agent_cfg["modules"].append(r"configs\try_module.json")

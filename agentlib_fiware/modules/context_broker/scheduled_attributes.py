@@ -17,6 +17,13 @@ logger = logging.getLogger(__name__)
 
 
 class ScheduledAttributesContextBrokerConfig(base.BaseContextBrokerConfig):
+    read_interval: float = Field(
+        default=5,
+        title="Read Interval",
+        description="Interval in which the service "
+                    "reads the attributes from the context broker"
+    )
+
     read_entity_attributes: AgentVariables = Field(
         title="Specify which attributes to listen to.",
         default=[],
@@ -49,7 +56,7 @@ def get_entity_attributes(
         http_client: ContextBrokerClient
 ):
     unique_entities = base.get_unique_entities(entity_attributes)
-    for entity_id, attributes_variables in unique_entities:
+    for entity_id, attributes_variables in unique_entities.items():
         entity = http_client.get_entity(entity_id=entity_id)
         for attr_name, variable in attributes_variables:
             process_entity_attribute_and_send_to_databroker(

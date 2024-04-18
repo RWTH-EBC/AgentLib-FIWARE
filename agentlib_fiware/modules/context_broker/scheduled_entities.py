@@ -26,6 +26,11 @@ class ScheduledEntitiesContextBrokerConfig(base.BaseContextBrokerConfig):
         description="List of AgentVariables. "
                     "The name is a entity_id to listen to."
     )
+    read_interval: float = Field(
+        default=5,
+        title="Read Interval",
+        description="Interval in which the service "
+    )
 
     @field_validator("read_entities")
     @classmethod
@@ -38,7 +43,7 @@ class ScheduledEntitiesContextBrokerConfig(base.BaseContextBrokerConfig):
             for entity_var in entities:
                 httpc.get_entity(entity_id=entity_var.name)
 
-        return entity_var
+        return entities
 
 
 class ScheduledEntitiesContextBroker(base.BaseContextBroker):

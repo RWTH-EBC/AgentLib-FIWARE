@@ -102,37 +102,10 @@ class BaseIoTACommunicator(BaseMqttClient):
     config: BaseIoTACommunicatorConfig
     mqttc_type = IoTAMQTTClient
 
-    def connect(self):
-        """Connect to the mqtt client"""
-        self._mqttc.connect(
-            host=self.config.mqtt_url.host,
-            port=int(self.config.mqtt_url.port) or 1883,
-            keepalive=self.config.keepalive,
-            bind_address="",
-            bind_port=0,
-            clean_start=MQTT_CLEAN_START_FIRST_ONLY,
-            properties=None
-        )
+    @property
+    def url(self) -> AnyMqttUrl:
+        return self.config.mqtt_url
 
-    def register_callbacks(self):
-        """
-        Overwrite default Communicator behaviour as we deal with
-        callbacks in custom functions after super().__init__ is called..
-        """
-        pass
-
-    def _callback(self, variable: AgentVariable):
-        """
-        This callback has to be overwritten by any communicator.
-        As we handle specific callbacks in the _fiware_callback
-        function, we just don't need this.
-        Additionally, we overwrite the register_callbacks function
-        so this will never be called.
-        """
-        pass
-
-    def _send(self, payload: dict):
-        """
-        Do not send all shared variables from the base communicator in AgentLib.
-        """
-        pass
+    def process(self):
+        """The IoTa modules are only callback driven"""
+        yield self.env.event()
