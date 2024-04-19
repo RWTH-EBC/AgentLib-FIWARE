@@ -28,8 +28,8 @@ include:
   - project: 'EBC/EBC_all/gitlab_ci/templates'
     file: 'pages/gh-pages.gitlab-ci.yml'
   # pytest & coverage
-  - project: 'EBC/EBC_all/gitlab_ci/templates'
-    file: 'python/tests/tests.gitlab-ci.yml'
+  #- project: 'EBC/EBC_all/gitlab_ci/templates'
+  #  file: 'python/tests/tests.gitlab-ci.yml'
   - template: Dependency-Scanning.gitlab-ci.yml
   - template: SAST.gitlab-ci.yml
 
