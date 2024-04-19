@@ -6,7 +6,5 @@ functions.
 
 .. toctree::
    :maxdepth: 2
-
-   agentlib_fiware.modules
-   agentlib_fiware.factory
-
+   
+   code/modules

@@ -1,0 +1,138 @@
+[agent]
+  debug = true
+  quiet = false
+
+[[inputs.mqtt_consumer]]
+  servers = [ "$servers" ]
+
+  ## Topics that will be subscribed to.
+  topics = [ "$topics" ]
+
+  ## The message topic will be stored in a tag specified by this value.  If set
+  ## to the empty string no topic tag will be created.
+  topic_tag = "service_path"
+
+  ## QoS policy for messages
+  ##   0 = at most once
+  ##   1 = at least once
+  ##   2 = exactly once
+  ##
+  ## When using a QoS of 1 or 2, you should enable persistent_session to allow
+  ## resuming unacknowledged messages.
+  # qos = 0
+
+  ## Connection timeout for initial connection in seconds
+  # connection_timeout = "30s"
+
+  ## Maximum messages to read from the broker that have not been written by an
+  ## output.  For best throughput set based on the number of metrics within
+  ## each message and the size of the output's metric_batch_size.
+  ##
+  ## For example, if each message from the queue contains 10 metrics and the
+  ## output metric_batch_size is 1000, setting this to 100 will ensure that a
+  ## full batch is collected and the write is triggered immediately without
+  ## waiting until the next flush_interval.
+  # max_undelivered_messages = 1000
+
+  ## Persistent session disables clearing of the client session on connection.
+  ## In order for this option to work you must also set client_id to identify
+  ## the client.  To receive messages that arrived while the client is offline,
+  ## also set the qos option to 1 or 2 and don't forget to also set the QoS when
+  ## publishing.
+  # persistent_session = false
+
+  ## If unset, a random client ID will be generated.
+  ## client_id = ""
+
+  ## Username and password to connect MQTT server.
+  # username = "telegraf"
+  # password = "metricsmetricsmetricsmetrics"
+
+  ## Optional TLS Config
+  # tls_ca = "/etc/telegraf/ca.pem"
+  # tls_cert = "/etc/telegraf/cert.pem"
+  # tls_key = "/etc/telegraf/key.pem"
+  ## Use TLS but skip chain & host verification
+  # insecure_skip_verify = false
+
+  ## Data format to consume.
+  ## Each data format has its own unique set of configuration options, read
+  ## more about them here:
+  ## https://github.com/influxdata/telegraf/blob/master/docs/DATA_FORMATS_INPUT.md
+  data_format = "json_v2"
+
+  [[inputs.mqtt_consumer.json_v2]]
+    #measurement_name = "fiware" # A string that will become the new measurement name
+    measurement_name_path = "data.0.type" # A string with valid GJSON path syntax, will override measurement_name
+    #timestamp_path = "data.0.TimeInstant.value" # A string with valid GJSON path syntax to a valid timestamp (single value)
+    #timestamp_format = "rfc3339" # A string with a valid timestamp format (see below for possible values)
+    [[inputs.mqtt_consumer.json_v2.object]]
+      path = "data" # A string with valid GJSON path syntax
+      #measurement_name_path = "type"
+      #timestamp_key = "TimeInstant_value" # A JSON key (for a nested key, prepend the parent keys with underscores) to a valid timestamp
+      #timestamp_format = "2023-02-28T11:00:31.578Z" # A string with a valid timestamp format (see below for possible values)
+      #timestamp_timezone = "" # A string with with a valid timezone (see below for possible values)
+      #disable_prepend_keys = false (or true, just not both)
+      included_keys = []
+      #excluded_keys = [] # List of JSON keys (for a nested key, prepend the parent keys with underscores) that shouldn't be included in result
+      tags = [
+        "unit_value",
+        "id"
+      ] # List of JSON keys (for a nested key, prepend the parent keys with underscores) to be a tag instead of a field
+      #[inputs.mqtt_consumer.json_v2.object.fields]
+       # pressure = "float"
+
+
+# Configuration for sending metrics to InfluxDB 2.0
+[[outputs.influxdb_v2]]
+  ## The URLs of the InfluxDB cluster nodes.
+  ##
+  ## Multiple URLs can be specified for a single cluster, only ONE of the
+  ## urls will be written to each interval.
+  ##   ex: urls = ["https://us-west-2-1.aws.cloud2.influxdata.com"]
+  #urls = ["http://influxdb:8086"]
+  urls = ["$urls"]
+
+  ## Token for authentication.
+  token ="$INFLUX_TOKEN"
+
+  ## Organization is the name of the organization you wish to write to.
+  organization ="$ORGANIZATION"
+
+  ## Destination bucket to write into.
+  bucket ="$BUCKET"
+
+  ## The value of this tag will be used to determine the bucket.  If this
+  ## tag is not set the 'bucket' option is used as the default.
+  # bucket_tag = ""
+
+  ## If true, the bucket tag will not be added to the metric.
+  # exclude_bucket_tag = false
+
+  ## Timeout for HTTP messages.
+  # timeout = "5s"
+
+  ## Additional HTTP headers
+  # http_headers = {"X-Special-Header" = "Special-Value"}
+
+  ## HTTP Proxy override, if unset values the standard proxy environment
+  ## variables are consulted to determine which proxy, if any, should be used.
+  # http_proxy = "http://corporate.proxy:3128"
+
+  ## HTTP User-Agent
+  # user_agent = "telegraf"
+
+  ## Content-Encoding for write request body, can be set to "gzip" to
+  ## compress body or "identity" to apply no encoding.
+  # content_encoding = "gzip"
+
+  ## Enable or disable uint support for writing uints influxdb 2.0.
+  # influx_uint_support = false
+
+  ## Optional TLS Config for use on HTTP connections.
+  # tls_ca = "/etc/telegraf/ca.pem"
+  # tls_cert = "/etc/telegraf/cert.pem"
+  # tls_key = "/etc/telegraf/key.pem"
+  ## Use TLS but skip chain & host verification
+  # insecure_skip_verify = false
+

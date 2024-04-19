@@ -13,7 +13,6 @@ Content of the documentation
    :maxdepth: 2
 
    installation
-   tutorials/tutorial
    PackageReference
 
 Readme of the agentlib
