@@ -1,2 +1,2 @@
-filip>=0.3.0
 agentlib>=0.8.2
+git+https://github.com/RWTH-EBC/FiLiP.git@272-mqtt-v2-does-not-work
