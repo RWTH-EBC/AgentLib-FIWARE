@@ -1,16 +1,72 @@
 import logging
 import datetime
-
-import pandas as pd
-import requests
-from typing import Union
+from typing import Union, Optional, List
 import math
+import requests
+
+from pydantic import Field, AnyUrl
+import pandas as pd
+
+from filip.models.base import FiwareHeader
 from filip.utils.validators import AnyHttpUrl
 from filip.models.base import FiwareHeader
 from filip.clients.ngsi_v2.quantumleap import QuantumLeapClient
 
 
+from agentlib_fiware.modules.time_series.base import BaseTimeSeriesAcquisition, BaseTimeSeriesAcquisitionConfig
+
+
+
 logger = logging.getLogger(__name__)
+
+
+class QuantumLeapDataAcquisitionConfig(BaseTimeSeriesAcquisitionConfig):
+    ql_url: AnyUrl = Field(
+        description="URL to QuantumLeap"
+    )
+    entity_name_attributes: List[str] = Field(
+        title="Mapping of entity/attribute combinations to extract from quantumleap"
+    )
+    fiware_header: FiwareHeader = Field(
+        description="service and service path in fiware header"
+    )
+    constant_to_date: Optional[datetime.datetime] = Field(
+        description="For development: Constant time until the data is to be extracted.",
+        default=None
+    )
+
+
+class QuantumLeapDataAcquisition(BaseTimeSeriesAcquisition):
+    config: QuantumLeapDataAcquisitionConfig
+
+    def register_callbacks(self):
+        pass
+
+    def process(self):
+        while True:
+            # Start extraction
+            self.logger.debug("Getting data")
+
+            # Extract data from QuantumLeap
+            if self.config.constant_to_date is not None:
+                to_date = self.config.constant_to_date
+            else:
+                to_date = datetime.datetime.now()
+            tsd = get_data_from_ql(
+                interval=self.config.interval,
+                to_date=to_date,
+                fiware_header=self.config.fiware_header,
+                entity_name_attributes=self.config.entity_name_attributes,
+                ql_url=self.config.ql_url
+            )
+
+            tsd_json = tsd.to_json(orient="split")
+
+            # Trigger the sending over the data_broker
+            self.logger.debug("Retrieved data and sending into DataBroker")
+            self.set("time_series_data", tsd_json)
+
+            yield self.env.timeout(self.config.interval)
 
 
 def get_data_from_ql(
