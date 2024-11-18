@@ -1,6 +1,7 @@
 import warnings
 from abc import abstractmethod
 
+from agentlib.modules.communicator.communicator import CommunicationDict
 from filip.clients.mqtt import IoTAMQTTClient
 from filip.models import FiwareHeader
 
@@ -109,3 +110,22 @@ class BaseIoTACommunicator(BaseMqttClient):
     def process(self):
         """The IoTa modules are only callback driven"""
         yield self.env.event()
+
+    def connect(self):
+        port = self.config.url.port
+        if port is None:
+            port = 1883
+        else:
+            port = int(port)
+        self._mqttc.connect(
+            host=self.url.host,
+            port=port,
+            keepalive=self.config.keepalive,
+            bind_address="",
+            bind_port=0,
+            clean_start=MQTT_CLEAN_START_FIRST_ONLY,
+            properties=None,
+        )
+
+    def _send(self, payload: CommunicationDict):
+        pass

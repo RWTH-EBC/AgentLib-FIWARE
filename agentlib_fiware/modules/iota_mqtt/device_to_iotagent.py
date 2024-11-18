@@ -14,7 +14,6 @@ from pydantic import (
     AnyHttpUrl,
     Field,
     PrivateAttr,
-    FilePath
 )
 
 from agentlib.modules.communicator.mqtt import \
