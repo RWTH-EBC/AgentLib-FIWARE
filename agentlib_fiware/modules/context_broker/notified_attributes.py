@@ -2,6 +2,8 @@ import logging
 
 from typing import List
 
+from agentlib.modules.communicator.communicator import CommunicationDict
+from paho.mqtt.client import MQTT_CLEAN_START_FIRST_ONLY
 from pydantic import (
     Field,
     field_validator,
@@ -68,6 +70,25 @@ class NotifiedAttributesContextBroker(base.BaseContextBroker, BaseMqttClient):
     @property
     def url(self) -> AnyMqttUrl:
         return self.config.mqtt_url
+
+    def connect(self):
+        port = self.url.port
+        if port is None:
+            port = 1883
+        else:
+            port = int(port)
+        self._mqttc.connect(
+            host=self.url.host,
+            port=port,
+            keepalive=self.config.keepalive,
+            bind_address="",
+            bind_port=0,
+            clean_start=MQTT_CLEAN_START_FIRST_ONLY,
+            properties=None,
+        )
+
+    def _send(self, payload: CommunicationDict):
+        pass
 
     def get_topic(self):
         """Get the subscription topic"""
