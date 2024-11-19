@@ -112,7 +112,7 @@ class BaseIoTACommunicator(BaseMqttClient):
         yield self.env.event()
 
     def connect(self):
-        port = self.config.url.port
+        port = self.url.port
         if port is None:
             port = 1883
         else:
